@@ -1,0 +1,68 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: pro-casa-db
+    restart: always
+    environment:
+      POSTGRES_USER: pro_casa_user
+      POSTGRES_PASSWORD: pro_casa_dev_password
+      POSTGRES_DB: pro_casa_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pro_casa_user -d pro_casa_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - pro-casa-network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pro-casa-backend
+    restart: always
+    environment:
+      DATABASE_URL: "postgresql://pro_casa_user:pro_casa_dev_password@postgres:5432/pro_casa_db?schema=public"
+      JWT_SECRET: "your-super-secret-jwt-key-change-in-production"
+      JWT_EXPIRES_IN: "7d"
+      PORT: 3001
+      NODE_ENV: "development"
+      CORS_ORIGIN: "http://localhost:3000,http://frontend:3000"
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - pro-casa-network
+
+  # Frontend Next.js
+  frontend:
+    build:
+      context: ./pro-casa
+      dockerfile: Dockerfile
+    container_name: pro-casa-frontend
+    restart: always
+    environment:
+      NEXT_PUBLIC_API_URL: "http://localhost:3001"
+      NODE_ENV: "production"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - pro-casa-network
+
+volumes:
+  postgres_data:
+
+networks:
+  pro-casa-network:
+    driver: bridge

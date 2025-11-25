@@ -1,0 +1,49 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { authRouter } from './routes/auth.routes';
+import { usersRouter } from './routes/users.routes';
+import { usersAdminRouter } from './routes/users.admin.routes';
+import { clientsRouter } from './routes/clients.routes';
+import { projectsRouter } from './routes/projects.routes';
+import { apartmentsRouter } from './routes/apartments.routes';
+import { bookingsRouter } from './routes/bookings.routes';
+import { mortgageRouter } from './routes/mortgage.routes';
+import { errorHandler } from './middleware/error.middleware';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Middleware
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  credentials: true,
+}));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// API Routes
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/admin/users', usersAdminRouter);
+app.use('/api/clients', clientsRouter);
+app.use('/api/projects', projectsRouter);
+app.use('/api/apartments', apartmentsRouter);
+app.use('/api/bookings', bookingsRouter);
+app.use('/api/mortgage', mortgageRouter);
+
+// Error handling
+app.use(errorHandler);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+});
