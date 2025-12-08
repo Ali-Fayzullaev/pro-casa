@@ -11,7 +11,10 @@ import {
   List,
   Map as MapIcon,
   Calendar,
-  Loader2
+  Loader2,
+  Edit,
+  Trash2,
+  MoreHorizontal
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,6 +43,23 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { API_URL } from "@/lib/config"
+import { useToast } from "@/hooks/use-toast"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import type { MapProject } from "@/components/map/project-map"
 
 // Динамический импорт карты
@@ -63,11 +83,20 @@ interface Project {
 
 export default function ProjectsCatalogPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<"grid" | "list" | "map">("grid")
   const [showAllFilters, setShowAllFilters] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+  const [deleteProjectId, setDeleteProjectId] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
+
+  // Check user role on mount
+  useEffect(() => {
+    const user = JSON.parse(localStorage.getItem('user') || '{}')
+    setUserRole(user.role || null)
+  }, [])
 
   // Filters
   const [district, setDistrict] = useState("ALL")
@@ -124,6 +153,43 @@ export default function ProjectsCatalogPage() {
     }
   }
 
+  const canManageProjects = userRole === 'DEVELOPER' || userRole === 'ADMIN'
+
+  const handleDeleteProject = async () => {
+    if (!deleteProjectId) return
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${API_URL}/projects/${deleteProjectId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete project')
+      }
+
+      toast({
+        title: "✅ Проект удалён",
+        description: "Объект успешно удалён из системы",
+      })
+
+      // Refresh projects list
+      fetchProjects()
+    } catch (error) {
+      console.error('Error deleting project:', error)
+      toast({
+        title: "❌ Ошибка",
+        description: "Не удалось удалить проект",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteProjectId(null)
+    }
+  }
+
   // Фильтрация по поиску
   const filteredProjects = useMemo(() => {
     if (!searchQuery.trim()) return projects
@@ -169,7 +235,7 @@ export default function ProjectsCatalogPage() {
         </div>
         <div className="flex gap-2">
           {/* Show Add Project button for Developer/Admin */}
-          {typeof window !== 'undefined' && ['DEVELOPER', 'ADMIN'].includes(JSON.parse(localStorage.getItem('user') || '{}').role) && (
+          {canManageProjects && (
             <Button onClick={() => router.push("/dashboard/projects/new")}>
               <Building2 className="mr-2 h-4 w-4" />
               Добавить объект
@@ -433,6 +499,34 @@ export default function ProjectsCatalogPage() {
                       >
                         Забронировать
                       </Button>
+                      {canManageProjects && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/dashboard/projects/${project.id}/edit`)
+                            }}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Редактировать
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setDeleteProjectId(project.id)
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Удалить
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -525,11 +619,57 @@ export default function ProjectsCatalogPage() {
                   <Calendar className="mr-2 h-4 w-4" />
                   Забронировать
                 </Button>
+                {canManageProjects && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation()
+                        router.push(`/dashboard/projects/${project.id}/edit`)
+                      }}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        Редактировать
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="text-red-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setDeleteProjectId(project.id)
+                        }}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Удалить
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteProjectId} onOpenChange={() => setDeleteProjectId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Удалить проект?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Это действие нельзя отменить. Проект и все связанные с ним квартиры будут удалены.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteProject} className="bg-red-600 hover:bg-red-700">
+              Удалить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,6 +22,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { FileUpload } from '@/components/file-upload';
+import { API_URL } from '@/lib/config';
 
 interface Project {
   name: string;
@@ -30,6 +32,7 @@ interface Project {
   address: string;
   class: string;
   deliveryDate: string;
+  images: string[];
 }
 
 export default function EditProjectPage() {
@@ -46,6 +49,7 @@ export default function EditProjectPage() {
     address: '',
     class: 'Комфорт',
     deliveryDate: '',
+    images: [],
   });
 
   useEffect(() => {
@@ -83,6 +87,7 @@ export default function EditProjectPage() {
         address: data.address || '',
         class: data.class || 'Комфорт',
         deliveryDate,
+        images: data.images || [],
       });
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -141,6 +146,13 @@ export default function EditProjectPage() {
 
   const handleChange = (field: keyof Project, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleRemoveImage = (urlToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      images: prev.images.filter(url => url !== urlToRemove)
+    }));
   };
 
   if (loading) {
@@ -249,6 +261,59 @@ export default function EditProjectPage() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Фотографии проекта */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImageIcon className="h-5 w-5" />
+                Фотографии проекта
+              </CardTitle>
+              <CardDescription>
+                Загрузите фотографии жилого комплекса (макс. 10 фото)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {/* Существующие фотографии */}
+              {formData.images.length > 0 && (
+                <div className="mb-4">
+                  <Label className="mb-2 block">Текущие фотографии ({formData.images.length})</Label>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {formData.images.map((url, index) => (
+                      <div key={index} className="relative group aspect-video rounded-lg overflow-hidden border">
+                        <img
+                          src={url}
+                          alt={`Фото ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(url)}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Загрузка новых фотографий */}
+              <FileUpload
+                existingFiles={[]}
+                category="images"
+                maxFiles={10 - formData.images.length}
+                onUpload={(uploadedFiles) => {
+                  const newUrls = uploadedFiles.map(f => f.url);
+                  setFormData(prev => ({
+                    ...prev,
+                    images: [...prev.images, ...newUrls]
+                  }));
+                }}
+              />
             </CardContent>
           </Card>
         </div>
