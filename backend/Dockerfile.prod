@@ -2,8 +2,8 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Устанавливаем OpenSSL для Prisma
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+# Устанавливаем OpenSSL для Prisma и утилиты для healthcheck
+RUN apt-get update -y && apt-get install -y openssl wget curl && rm -rf /var/lib/apt/lists/*
 
 # Копируем файлы зависимостей
 COPY package*.json ./
