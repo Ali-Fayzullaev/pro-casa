@@ -17,13 +17,13 @@ docker compose up -d
 echo "⏳ Ожидаем готовности PostgreSQL..."
 sleep 5
 
-# Создаем таблицы
-echo "📋 Создаем таблицы БД..."
-docker exec -i pro-casa-db psql -U pro_casa_user -d pro_casa_db < backend/migrations.sql
+# Выполняем миграции Prisma
+echo "📋 Применяем миграции базы данных..."
+docker compose exec -T backend npm run prisma:migrate:deploy
 
-# Загружаем seed данные
-echo "🌱 Загружаем тестовые данные..."
-docker exec -i pro-casa-db psql -U pro_casa_user -d pro_casa_db < backend/seed.sql
+# Загружаем seed данные (если необходимо)
+echo "🌱 Проверяем и загружаем базовые данные..."
+docker compose exec -T backend npm run db:seed:production
 
 echo ""
 echo "✅ Развертывание завершено!"
