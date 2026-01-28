@@ -11,8 +11,9 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import api from "@/lib/api-client";
 import { toast } from "sonner";
-import { CheckCheck } from "lucide-react";
+import { CheckCheck, Trophy, PartyPopper } from "lucide-react";
 import confetti from "canvas-confetti";
+import { useState } from "react";
 
 const CloseDealSchema = z.object({
     offerId: z.string().min(1, "Выберите оффер"),
@@ -30,8 +31,16 @@ interface CloseDealDialogProps {
     onSuccess: () => void;
 }
 
+interface DealResult {
+    finalPrice: number;
+    commission: number;
+    buyerName: string;
+}
+
 export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: CloseDealDialogProps) {
     const queryClient = useQueryClient();
+    const [dealResult, setDealResult] = useState<DealResult | null>(null);
+
     const form = useForm<CloseDealInput>({
         // @ts-ignore
         resolver: zodResolver(CloseDealSchema),
@@ -44,7 +53,7 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
             const res = await api.get(`/buyers/offers/${propertyId}`);
             return res.data;
         },
-        enabled: open
+        enabled: open && !dealResult
     });
 
     const mutation = useMutation({
@@ -56,11 +65,11 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
                 notes: data.notes
             });
         },
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             // Trigger Confetti
-            const duration = 5 * 1000;
+            const duration = 3 * 1000;
             const animationEnd = Date.now() + duration;
-            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
 
             const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -76,9 +85,17 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
                 confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
             }, 250);
 
-            toast.success("Сделка закрыта! Поздравляем!");
-            onOpenChange(false);
-            onSuccess(); // Callback to move card visually or refresh
+            // Find buyer name from offers
+            const offer = offers?.find((o: any) => o.id === variables.offerId);
+            const buyerName = offer ? `${offer.buyer.firstName} ${offer.buyer.lastName}` : "Покупатель";
+
+            // Show result screen
+            setDealResult({
+                finalPrice: variables.finalPrice,
+                commission: variables.commission,
+                buyerName
+            });
+
             queryClient.invalidateQueries({ queryKey: ["properties"] });
             queryClient.invalidateQueries({ queryKey: ["sellers"] });
         },
@@ -96,6 +113,67 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
         }
     };
 
+    const handleClose = () => {
+        setDealResult(null);
+        form.reset();
+        onOpenChange(false);
+        onSuccess();
+    };
+
+    // SUCCESS SCREEN
+    if (dealResult) {
+        return (
+            <Dialog open={open} onOpenChange={handleClose}>
+                <DialogContent className="sm:max-w-md text-center">
+                    <div className="py-8">
+                        <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                            <Trophy className="w-10 h-10 text-green-600" />
+                        </div>
+
+                        <DialogTitle className="text-2xl font-bold text-green-700 mb-2 flex items-center justify-center gap-2">
+                            <PartyPopper className="w-6 h-6" />
+                            Сделка закрыта!
+                            <PartyPopper className="w-6 h-6" />
+                        </DialogTitle>
+
+                        <p className="text-muted-foreground mb-6">
+                            Поздравляем с успешной продажей!
+                        </p>
+
+                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-left">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div className="text-xs text-green-600 mb-1">Покупатель</div>
+                                    <div className="font-semibold text-green-800">{dealResult.buyerName}</div>
+                                </div>
+                                <div>
+                                    <div className="text-xs text-green-600 mb-1">Итоговая цена</div>
+                                    <div className="font-bold text-lg text-green-800">
+                                        {dealResult.finalPrice.toLocaleString('ru-RU')} ₸
+                                    </div>
+                                </div>
+                                <div className="col-span-2 pt-2 border-t border-green-200">
+                                    <div className="text-xs text-green-600 mb-1">Ваша комиссия</div>
+                                    <div className="font-bold text-xl text-green-700">
+                                        {dealResult.commission.toLocaleString('ru-RU')} ₸
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Button
+                            onClick={handleClose}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            Отлично! Закрыть
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        );
+    }
+
+    // FORM SCREEN
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md">
@@ -154,3 +232,4 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
         </Dialog>
     );
 }
+

@@ -90,64 +90,81 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                     {/* Properties List */}
                     {seller.properties && seller.properties.length > 0 ? (
                         <div className="space-y-1.5 mb-3">
-                            {seller.properties.slice(0, 3).map((p: any) => (
-                                <div
-                                    key={p.id}
-                                    className="flex flex-col text-[10px] bg-gray-50 p-1.5 rounded border hover:bg-gray-100 cursor-pointer transition-colors"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setInitialPropertyId(p.id);
-                                        setSummaryOpen(true);
-                                    }}
-                                >
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="font-medium truncate max-w-[100px]" title={p.residentialComplex}>
-                                            {p.residentialComplex}
-                                        </span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
-                                                {p.showsCount > 0 && (
-                                                    <span className="flex items-center" title="Показы">
-                                                        <Eye className="h-3 w-3 mr-0.5" /> {p.showsCount}
-                                                    </span>
-                                                )}
-                                                {p.leadsCount > 0 && (
-                                                    <span className="flex items-center font-bold text-blue-600" title="Офферы">
-                                                        <FileText className="h-3 w-3 mr-0.5" /> {p.leadsCount}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white">
-                                                {FunnelStageLabels[p.funnelStage] || p.funnelStage}
-                                            </Badge>
-                                        </div>
-                                    </div>
-
-                                    {/* AI Strategy Badge & Snippet */}
-                                    {p.activeStrategy && (
-                                        <div className="mt-1 flex flex-col gap-1">
-                                            <div className="flex items-center">
-                                                <Badge variant="secondary" className="w-fit text-[8px] h-3.5 px-1">
-                                                    {StrategyTypeLabels[p.activeStrategy] || p.activeStrategy}
+                            {seller.properties.slice(0, 3).map((p: any) => {
+                                const isSold = p.funnelStage === 'SOLD' || p.status === 'SOLD';
+                                return (
+                                    <div
+                                        key={p.id}
+                                        className={`flex flex-col text-[10px] p-1.5 rounded border cursor-pointer transition-colors ${isSold
+                                                ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                                : 'bg-gray-50 hover:bg-gray-100'
+                                            }`}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setInitialPropertyId(p.id);
+                                            setSummaryOpen(true);
+                                        }}
+                                    >
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className={`font-medium truncate max-w-[100px] ${isSold ? 'text-green-700' : ''}`} title={p.residentialComplex}>
+                                                {isSold && <span className="mr-1">✅</span>}
+                                                {p.residentialComplex}
+                                            </span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                                                    {p.showsCount > 0 && (
+                                                        <span className="flex items-center" title="Показы">
+                                                            <Eye className="h-3 w-3 mr-0.5" /> {p.showsCount}
+                                                        </span>
+                                                    )}
+                                                    {p.leadsCount > 0 && (
+                                                        <span className="flex items-center font-bold text-blue-600" title="Офферы">
+                                                            <FileText className="h-3 w-3 mr-0.5" /> {p.leadsCount}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <Badge
+                                                    variant={isSold ? "default" : "outline"}
+                                                    className={`text-[9px] h-4 px-1 ${isSold ? 'bg-green-600 text-white' : 'bg-white'}`}
+                                                >
+                                                    {FunnelStageLabels[p.funnelStage] || p.funnelStage}
                                                 </Badge>
                                             </div>
-
-                                            {p.strategyExplanation && (
-                                                <div className="text-[9px] text-muted-foreground leading-tight line-clamp-2 pl-1 border-l-2 border-border">
-                                                    {(() => {
-                                                        try {
-                                                            const parsed = JSON.parse(p.strategyExplanation);
-                                                            return parsed.reasoning || parsed.text || p.strategyExplanation;
-                                                        } catch {
-                                                            return p.strategyExplanation;
-                                                        }
-                                                    })()}
-                                                </div>
-                                            )}
                                         </div>
-                                    )}
-                                </div>
-                            ))}
+
+                                        {/* Show final price for SOLD properties */}
+                                        {isSold && p.price && (
+                                            <div className="text-[10px] font-bold text-green-700 mt-1">
+                                                Продано: {Number(p.price).toLocaleString('ru-RU')} ₸
+                                            </div>
+                                        )}
+
+                                        {/* AI Strategy Badge & Snippet (only for non-sold) */}
+                                        {!isSold && p.activeStrategy && (
+                                            <div className="mt-1 flex flex-col gap-1">
+                                                <div className="flex items-center">
+                                                    <Badge variant="secondary" className="w-fit text-[8px] h-3.5 px-1">
+                                                        {StrategyTypeLabels[p.activeStrategy] || p.activeStrategy}
+                                                    </Badge>
+                                                </div>
+
+                                                {p.strategyExplanation && (
+                                                    <div className="text-[9px] text-muted-foreground leading-tight line-clamp-2 pl-1 border-l-2 border-border">
+                                                        {(() => {
+                                                            try {
+                                                                const parsed = JSON.parse(p.strategyExplanation);
+                                                                return parsed.reasoning || parsed.text || p.strategyExplanation;
+                                                            } catch {
+                                                                return p.strategyExplanation;
+                                                            }
+                                                        })()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                             {seller.properties.length > 3 && (
                                 <div className="text-[10px] text-center text-muted-foreground">
                                     еще +{seller.properties.length - 3}
