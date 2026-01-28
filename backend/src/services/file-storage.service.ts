@@ -19,8 +19,18 @@ class FileStorageService {
             return;
         }
 
-        const endPoint = process.env.MINIO_ENDPOINT.replace('http://', '').replace('https://', '').split(':')[0];
-        const port = parseInt(process.env.MINIO_ENDPOINT.split(':')[1] || '9000');
+        // Parse endpoint - remove protocol prefix if present
+        let endPoint = process.env.MINIO_ENDPOINT
+            .replace('http://', '')
+            .replace('https://', '');
+
+        // Remove port from endpoint if included
+        if (endPoint.includes(':')) {
+            endPoint = endPoint.split(':')[0];
+        }
+
+        // Use separate MINIO_PORT env var or default to 9000
+        const port = parseInt(process.env.MINIO_PORT || '9000');
         const useSSL = process.env.MINIO_USE_SSL === 'true';
 
         this.client = new Client({
@@ -32,6 +42,10 @@ class FileStorageService {
         });
 
         this.ensureBucket();
+
+        if (this.client) {
+            console.log(`[FileStorage] Initialized MinIO Client. Endpoint: ${endPoint}, Port: ${port}, SSL: ${useSSL}, Bucket: ${this.bucket}`);
+        }
     }
 
     private ensureUploadDir() {
@@ -70,11 +84,18 @@ class FileStorageService {
 
         // Fallback to Local FS
         const filePath = path.join(this.uploadDir, filename);
+
+        // Ensure parent directory exists for nested paths (e.g. properties/id/...)
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
         await fs.promises.writeFile(filePath, file.buffer);
 
-        // Return relative URL that express.static will serve
-        const apiUrl = process.env.API_URL || 'http://localhost:3001';
-        return `${apiUrl}/uploads/${filename}`;
+        // Return relative URL that works in any environment
+        // The frontend will request this from its current domain
+        return `/uploads/${filename}`;
     }
 
     async deleteFile(filename: string): Promise<void> {

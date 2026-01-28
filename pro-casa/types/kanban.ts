@@ -11,6 +11,7 @@ export enum PropertyFunnelStage {
     LEADS = 'LEADS',
     SHOWS = 'SHOWS',
     DEAL = 'DEAL',
+    SOLD = 'SOLD',
     POST_SERVICE = 'POST_SERVICE',
 }
 
@@ -110,6 +111,7 @@ export interface CrmProperty {
     documentsVerified?: boolean; // NEW
 
     funnelStage: PropertyFunnelStage;
+    status?: string; // Property status (ACTIVE, SOLD, ARCHIVED, etc.)
     updatedAt: string;
     createdAt: string; // Added for filtering
     strategyExplanation?: string;
@@ -117,11 +119,48 @@ export interface CrmProperty {
     images?: string[]; // Added Phase 2
     notes?: string;
 
+    // === Full Details Fields (Added Phase 2b) ===
+    // 3. Constructive
+    buildingType?: string; // Enum
+    layoutType?: string; // Enum
+    elevatorCount?: number;
+    hasFreightElevator?: boolean;
+    lobbyType?: string; // Enum
+    accessSystem?: string; // Enum
+    mopState?: string; // Enum
+    hasClosedTerritory?: boolean;
+
+    // 6. Condition & Equipment
+    furnitureLevel?: string;
+    appliancesLevel?: string;
+    hasFloorHeating?: boolean;
+    hasWalkInCloset?: boolean;
+    hasAirConditioning?: boolean;
+    hasBuiltInAppliances?: boolean;
+    hasPanoramicWindows?: boolean;
+
+    // 8. Financial/Legal
+    // isMortgaged already defined above
+    mortgageBank?: string;
+    mortgageRemaining?: string; // Decimal
+    encumbranceType?: string; // Enum
+    encumbranceDescription?: string;
+
+    // 9. Extra
+    glazingType?: string;
+    facadeMaterial?: string;
+    parkingSpaces?: number;
+
     seller?: {
         id: string;
         firstName: string;
         lastName: string;
         phone?: string;
         trustLevel?: number;
+    };
+    broker?: {
+        id: string;
+        firstName: string;
+        lastName: string;
     };
 }

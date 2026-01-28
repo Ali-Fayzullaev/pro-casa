@@ -581,6 +581,10 @@ crmPropertiesRouter.post(
                 seller
             );
 
+            // OVERRIDE: Do not assign strategy on creation (Wait for Strategy Stage)
+            (calculationResult as any).activeStrategy = null;
+            (calculationResult as any).strategyExplanation = null;
+
             // Update with calculated values
             const updatedProperty = await prisma.crmProperty.update({
                 where: { id: property.id },
@@ -779,6 +783,50 @@ crmPropertiesRouter.put(
         } catch (error) {
             console.error('Update property stage error:', error);
             res.status(500).json({ error: 'Ошибка изменения этапа' });
+        }
+    }
+);
+
+// =========================================
+// PATCH /api/crm-properties/:id - Частичное обновление (для сохранения стратегии)
+// =========================================
+crmPropertiesRouter.patch(
+    '/:id',
+    requireRole('BROKER', 'ADMIN'),
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { id } = req.params;
+            const data = req.body;
+
+            const existing = await prisma.crmProperty.findUnique({
+                where: { id },
+                include: { seller: true }
+            });
+
+            if (!existing) {
+                res.status(404).json({ error: 'Объект не найден' });
+                return;
+            }
+
+            if (req.user?.role === 'BROKER' && existing.brokerId !== req.user.userId) {
+                res.status(403).json({ error: 'Доступ запрещен' });
+                return;
+            }
+
+            // Simple update for specific fields allowed in patch
+            // For now allow updating activeStrategy and logs
+            const property = await prisma.crmProperty.update({
+                where: { id },
+                data: {
+                    activeStrategy: data.activeStrategy,
+                    strategyExplanation: data.strategyExplanation,
+                }
+            });
+
+            res.json(property);
+        } catch (error) {
+            console.error('Patch CRM property error:', error);
+            res.status(500).json({ error: 'Ошибка обновления' });
         }
     }
 );
@@ -1153,11 +1201,8 @@ crmPropertiesRouter.post('/:id/close', async (req: Request, res: Response) => {
                 where: { id },
                 data: {
                     status: 'SOLD',
-                    funnelStage: 'DEAL',
-                    // potentially store final price if schema supports it, strictly we use offers usually
-                    // checking schema: CrmProperty has price, but maybe we shouldn't overwrite asking price?
-                    // Let's assume we keep asking price history and trust the Offer as the record of deal price.
-                    // But we can store commission.
+                    funnelStage: 'SOLD' as any, // Move to SOLD stage in kanban
+                    // Store the accepted offer ID for reference
                 }
             });
 

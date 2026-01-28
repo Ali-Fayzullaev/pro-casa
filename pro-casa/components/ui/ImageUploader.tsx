@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { X, Upload, Image as ImageIcon, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,10 +17,29 @@ interface ImageUploaderProps {
 
 export function ImageUploader({ propertyId, images = [], onImagesChange }: ImageUploaderProps) {
     const [uploading, setUploading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [localImages, setLocalImages] = useState<string[]>(images);
 
-    // Sync with parent if needed (optional optimization)
-    // useEffect(() => setLocalImages(images), [images]);
+    // Fetch existing images when component mounts
+    useEffect(() => {
+        const fetchImages = async () => {
+            try {
+                const res = await api.get(`/crm-properties/${propertyId}`);
+                const existingImages = res.data.images || [];
+                setLocalImages(existingImages);
+                onImagesChange?.(existingImages);
+            } catch (error) {
+                console.error("Failed to fetch property images:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (propertyId) {
+            fetchImages();
+        }
+    }, [propertyId]);
+
 
     const onDrop = useCallback(async (acceptedFiles: File[]) => {
         if (acceptedFiles.length === 0) return;
@@ -89,17 +108,19 @@ export function ImageUploader({ propertyId, images = [], onImagesChange }: Image
                 className={cn(
                     "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
                     isDragActive ? "border-indigo-500 bg-indigo-50" : "border-gray-300 hover:border-indigo-400 hover:bg-gray-50",
-                    uploading && "opacity-50 pointer-events-none"
+                    (uploading || loading) && "opacity-50 pointer-events-none"
                 )}
             >
                 <input {...getInputProps()} />
                 <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                    {uploading ? (
+                    {(uploading || loading) ? (
                         <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
                     ) : (
                         <Upload className="h-10 w-10 text-gray-400" />
                     )}
-                    {uploading ? (
+                    {loading ? (
+                        <p>Загрузка фото...</p>
+                    ) : uploading ? (
                         <p>Загрузка...</p>
                     ) : isDragActive ? (
                         <p className="text-indigo-600 font-medium">Отпустите файлы сюда</p>

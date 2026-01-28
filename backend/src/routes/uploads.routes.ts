@@ -22,6 +22,9 @@ uploadsRouter.post(
     upload.single('file'), // expect field name 'file'
     async (req: Request, res: Response): Promise<void> => {
         try {
+            if (!req.file) {
+                console.error('Upload Error: req.file is missing. Headers:', req.headers['content-type'], 'Length:', req.headers['content-length']);
+            }
             const { id } = req.params;
             const file = req.file;
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BarChart3, TrendingUp, Users, Home, DollarSign, Calendar } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, Home, DollarSign, Calendar, Activity, AlertTriangle, CheckCircle } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -10,48 +10,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getApiUrl } from '@/lib/api-config';
-
-interface Analytics {
-  clients: {
-    total: number;
-    new: number;
-    inProgress: number;
-    dealClosed: number;
-    rejected: number;
-  };
-  projects: {
-    total: number;
-    totalApartments: number;
-  };
-  apartments: {
-    total: number;
-    available: number;
-    reserved: number;
-    sold: number;
-  };
-  bookings: {
-    total: number;
-    pending: number;
-    confirmed: number;
-    cancelled: number;
-    expired: number;
-  };
-  revenue: {
-    totalSales: number;
-    avgPrice: number;
-  };
-}
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import api from '@/lib/api-client';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
-  const [analytics, setAnalytics] = useState<Analytics>({
-    clients: { total: 0, new: 0, inProgress: 0, dealClosed: 0, rejected: 0 },
-    projects: { total: 0, totalApartments: 0 },
-    apartments: { total: 0, available: 0, reserved: 0, sold: 0 },
-    bookings: { total: 0, pending: 0, confirmed: 0, cancelled: 0, expired: 0 },
-    revenue: { totalSales: 0, avgPrice: 0 },
-  });
+  const [data, setData] = useState<any>(null);
 
   useEffect(() => {
     fetchAnalytics();
@@ -59,81 +24,8 @@ export default function AnalyticsPage() {
 
   const fetchAnalytics = async () => {
     try {
-      const token = localStorage.getItem('token');
-
-      const [clientsRes, projectsRes, apartmentsRes, bookingsRes] = await Promise.all([
-        fetch(getApiUrl('/clients'), {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }),
-        fetch(getApiUrl('/projects'), {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }),
-        fetch(getApiUrl('/apartments'), {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }),
-        fetch(getApiUrl('/bookings'), {
-          headers: { 'Authorization': `Bearer ${token}` },
-        }),
-      ]);
-
-      const clientsData = await clientsRes.json();
-      const projectsData = await projectsRes.json();
-      const apartmentsData = await apartmentsRes.json();
-      const bookingsData = await bookingsRes.json();
-
-      const clients = clientsData.clients || [];
-      const projects = projectsData.projects || [];
-      const apartments = apartmentsData.apartments || [];
-      const bookings = bookingsData.bookings || [];
-
-      // Расчет статистики клиентов
-      const clientStats = {
-        total: clients.length,
-        new: clients.filter((c: any) => c.status === 'NEW').length,
-        inProgress: clients.filter((c: any) => c.status === 'IN_PROGRESS').length,
-        dealClosed: clients.filter((c: any) => c.status === 'DEAL_CLOSED').length,
-        rejected: clients.filter((c: any) => c.status === 'REJECTED').length,
-      };
-
-      // Расчет статистики проектов
-      const projectStats = {
-        total: projects.length,
-        totalApartments: projects.reduce((sum: number, p: any) =>
-          sum + (p.apartmentStats?.total || 0), 0
-        ),
-      };
-
-      // Расчет статистики квартир
-      const apartmentStats = {
-        total: apartments.length,
-        available: apartments.filter((a: any) => a.status === 'AVAILABLE').length,
-        reserved: apartments.filter((a: any) => a.status === 'RESERVED').length,
-        sold: apartments.filter((a: any) => a.status === 'SOLD').length,
-      };
-
-      // Расчет статистики бронирований
-      const bookingStats = {
-        total: bookings.length,
-        pending: bookings.filter((b: any) => b.status === 'PENDING').length,
-        confirmed: bookings.filter((b: any) => b.status === 'CONFIRMED').length,
-        cancelled: bookings.filter((b: any) => b.status === 'CANCELLED').length,
-        expired: bookings.filter((b: any) => b.status === 'EXPIRED').length,
-      };
-
-      // Расчет доходов
-      const soldApartments = apartments.filter((a: any) => a.status === 'SOLD');
-      const totalSales = soldApartments.reduce((sum: number, a: any) =>
-        sum + parseFloat(a.price || 0), 0
-      );
-      const avgPrice = soldApartments.length > 0 ? totalSales / soldApartments.length : 0;
-
-      setAnalytics({
-        clients: clientStats,
-        projects: projectStats,
-        apartments: apartmentStats,
-        bookings: bookingStats,
-        revenue: { totalSales, avgPrice },
-      });
+      const res = await api.get('/analytics/dashboard');
+      setData(res.data);
     } catch (error) {
       console.error('Error fetching analytics:', error);
     } finally {
@@ -145,299 +37,248 @@ export default function AnalyticsPage() {
     return new Intl.NumberFormat('ru-KZ', {
       style: 'currency',
       currency: 'KZT',
-      minimumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const getPercent = (value: number, total: number) => {
-    return total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+      maximumFractionDigits: 0,
+    }).format(value || 0);
   };
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <p className="text-muted-foreground">Загрузка аналитики...</p>
+      <div className="flex flex-1 items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground animate-pulse">Загрузка аналитики...</p>
       </div>
     );
   }
 
+  if (!data) return null;
+
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex flex-1 flex-col gap-6 p-4">
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-2">
           <BarChart3 className="h-8 w-8" />
-          Аналитика и статистика
+          Аналитика
         </h1>
         <p className="text-muted-foreground mt-1">
-          Общие показатели работы системы
+          Обзор ключевых показателей и эффективности
         </p>
       </div>
 
-      {/* Ключевые метрики */}
+      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Клиенты
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Активные объекты</CardTitle>
+            <Home className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{analytics.clients.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {analytics.clients.dealClosed} сделок закрыто
-            </p>
+            <div className="text-2xl font-bold">{data.kpi.activeDeals}</div>
+            <p className="text-xs text-muted-foreground">В продаже</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Home className="h-4 w-4" />
-              Квартиры
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Прогноз комиссии</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{analytics.apartments.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {analytics.apartments.sold} продано
-            </p>
+            <div className="text-2xl font-bold">{formatMoney(data.kpi.commissionForecast)}</div>
+            <p className="text-xs text-muted-foreground">По активным сделкам (2%)</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Брони
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Горячие лиды</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{analytics.bookings.total}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {analytics.bookings.pending + analytics.bookings.confirmed} активных
-            </p>
+            <div className="text-2xl font-bold">{data.kpi.hotLeads}</div>
+            <p className="text-xs text-muted-foreground">Активные покупатели</p>
           </CardContent>
         </Card>
-
         <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Доход
-            </CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Конверсия</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatMoney(analytics.revenue.totalSales)}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Средняя цена: {formatMoney(analytics.revenue.avgPrice)}
-            </p>
+            <div className="text-2xl font-bold">{data.kpi.conversionRate}%</div>
+            <p className="text-xs text-muted-foreground">В успешную сделку</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Детальная статистика */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Клиенты */}
-        <Card>
+      {/* Admin: Brokers Performance */}
+      {data.brokersPerformance && (
+        <Card className="col-span-full">
           <CardHeader>
-            <CardTitle>Клиенты по статусам</CardTitle>
-            <CardDescription>Распределение клиентов</CardDescription>
+            <CardTitle>Эффективность команды</CardTitle>
+            <CardDescription>Показатели работы брокеров</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline">Новые</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.clients.new, analytics.clients.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.clients.new}</span>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted/50 text-muted-foreground">
+                  <tr>
+                    <th className="p-3 font-medium">Брокер</th>
+                    <th className="p-3 font-medium text-center">Объектов</th>
+                    <th className="p-3 font-medium text-center">Активные</th>
+                    <th className="p-3 font-medium text-center">Сделки</th>
+                    <th className="p-3 font-medium text-right">Прогноз (KZT)</th>
+                    <th className="p-3 font-medium text-right">Конверсия</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {data.brokersPerformance.map((broker: any) => (
+                    <tr key={broker.id} className="hover:bg-muted/10">
+                      <td className="p-3 font-medium flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                            {broker.name.split(' ').map((n: string) => n[0]).join('')}
+                          </AvatarFallback>
+                        </Avatar>
+                        {broker.name}
+                      </td>
+                      <td className="p-3 text-center">{broker.totalProperties}</td>
+                      <td className="p-3 text-center font-semibold text-blue-600">{broker.activeProperties}</td>
+                      <td className="p-3 text-center font-bold text-green-600">{broker.completedDeals}</td>
+                      <td className="p-3 text-right text-muted-foreground">{formatMoney(broker.commissionForecast)}</td>
+                      <td className="p-3 text-right">
+                        <Badge variant={broker.conversionRate > 10 ? "default" : "secondary"}>
+                          {broker.conversionRate.toFixed(1)}%
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
+          </CardContent>
+        </Card>
+      )}
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-blue-500">В работе</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.clients.inProgress, analytics.clients.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.clients.inProgress}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-500">Сделка закрыта</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.clients.dealClosed, analytics.clients.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.clients.dealClosed}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-red-500">Отклонено</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.clients.rejected, analytics.clients.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.clients.rejected}</span>
-            </div>
-
-            {/* Прогресс бар */}
-            <div className="h-3 w-full rounded-full overflow-hidden flex mt-4">
-              <div
-                className="bg-gray-300"
-                style={{ width: `${getPercent(analytics.clients.new, analytics.clients.total)}%` }}
-              />
-              <div
-                className="bg-blue-500"
-                style={{ width: `${getPercent(analytics.clients.inProgress, analytics.clients.total)}%` }}
-              />
-              <div
-                className="bg-green-500"
-                style={{ width: `${getPercent(analytics.clients.dealClosed, analytics.clients.total)}%` }}
-              />
-              <div
-                className="bg-red-500"
-                style={{ width: `${getPercent(analytics.clients.rejected, analytics.clients.total)}%` }}
-              />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {/* Funnel Chart */}
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Воронка продаж</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.charts.funnel}>
+                  <XAxis
+                    dataKey="name"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'white', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                    cursor={{ fill: '#f1f5f9' }}
+                  />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
 
-        {/* Квартиры */}
-        <Card>
+        {/* Activity Feed */}
+        <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Квартиры по статусам</CardTitle>
-            <CardDescription>Доступность квартир</CardDescription>
+            <CardTitle>Последняя активность</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-green-500">Доступно</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.apartments.available, analytics.apartments.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.apartments.available}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-yellow-500">Забронировано</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.apartments.reserved, analytics.apartments.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.apartments.reserved}</span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-gray-500">Продано</Badge>
-                <span className="text-sm text-muted-foreground">
-                  {getPercent(analytics.apartments.sold, analytics.apartments.total)}%
-                </span>
-              </div>
-              <span className="font-bold">{analytics.apartments.sold}</span>
-            </div>
-
-            {/* Прогресс бар */}
-            <div className="h-3 w-full rounded-full overflow-hidden flex mt-4">
-              <div
-                className="bg-green-500"
-                style={{ width: `${getPercent(analytics.apartments.available, analytics.apartments.total)}%` }}
-              />
-              <div
-                className="bg-yellow-500"
-                style={{ width: `${getPercent(analytics.apartments.reserved, analytics.apartments.total)}%` }}
-              />
-              <div
-                className="bg-gray-500"
-                style={{ width: `${getPercent(analytics.apartments.sold, analytics.apartments.total)}%` }}
-              />
-            </div>
-
-            {/* Конверсия */}
-            <div className="pt-3 border-t">
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4 text-green-600" />
-                <span className="font-medium">Конверсия:</span>
-                <span className="text-muted-foreground">
-                  {getPercent(analytics.apartments.sold, analytics.apartments.total)}% продано
-                </span>
-              </div>
+          <CardContent>
+            <div className="space-y-8">
+              {data.activity.map((item: any) => (
+                <div className="flex items-center" key={item.id}>
+                  <div className="ml-4 space-y-1">
+                    <p className="text-sm font-medium leading-none">{item.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {item.description}
+                    </p>
+                  </div>
+                  <div className="ml-auto font-medium text-xs text-muted-foreground">
+                    {new Date(item.date).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+              {data.activity.length === 0 && (
+                <div className="text-center text-muted-foreground text-sm py-8">
+                  Нет активности
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Бронирования и Проекты */}
-      <div className="grid gap-4 md:grid-cols-2">
-        {/* Бронирования */}
-        <Card>
+      {/* Sold Deals Section */}
+      {data.soldDeals && data.soldDeals.length > 0 && (
+        <Card className="col-span-full">
           <CardHeader>
-            <CardTitle>Бронирования</CardTitle>
-            <CardDescription>Статистика бронирований</CardDescription>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <CheckCircle className="h-5 w-5" />
+              Закрытые сделки
+            </CardTitle>
+            <CardDescription>
+              Успешно проданные объекты
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="border rounded-lg p-3">
-                <p className="text-sm text-muted-foreground">Ожидание</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {analytics.bookings.pending}
-                </p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <p className="text-sm text-muted-foreground">Подтверждено</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {analytics.bookings.confirmed}
-                </p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <p className="text-sm text-muted-foreground">Отменено</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {analytics.bookings.cancelled}
-                </p>
-              </div>
-              <div className="border rounded-lg p-3">
-                <p className="text-sm text-muted-foreground">Истекло</p>
-                <p className="text-2xl font-bold text-gray-600">
-                  {analytics.bookings.expired}
-                </p>
-              </div>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-green-50 text-muted-foreground">
+                  <tr>
+                    <th className="p-3 font-medium">Объект</th>
+                    <th className="p-3 font-medium">Продавец</th>
+                    <th className="p-3 font-medium">Покупатель</th>
+                    <th className="p-3 font-medium text-right">Цена продажи</th>
+                    <th className="p-3 font-medium text-right">Комиссия (2%)</th>
+                    <th className="p-3 font-medium">Дата</th>
+                    {data.brokersPerformance && (
+                      <th className="p-3 font-medium">Брокер</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {data.soldDeals.map((deal: any) => (
+                    <tr key={deal.id} className="hover:bg-green-50/50">
+                      <td className="p-3">
+                        <div className="font-medium">{deal.residentialComplex}</div>
+                        <div className="text-xs text-muted-foreground">{deal.address}</div>
+                      </td>
+                      <td className="p-3">{deal.seller}</td>
+                      <td className="p-3">{deal.buyer}</td>
+                      <td className="p-3 text-right font-semibold text-green-600">
+                        {formatMoney(deal.finalPrice)}
+                      </td>
+                      <td className="p-3 text-right font-bold text-green-700">
+                        {formatMoney(deal.commission)}
+                      </td>
+                      <td className="p-3 text-muted-foreground">
+                        {new Date(deal.closedAt).toLocaleDateString('ru-RU')}
+                      </td>
+                      {data.brokersPerformance && (
+                        <td className="p-3">
+                          <Badge variant="secondary">{deal.broker}</Badge>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
-
-        {/* Проекты */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Проекты</CardTitle>
-            <CardDescription>Жилые комплексы</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Всего проектов</span>
-              <span className="text-2xl font-bold">{analytics.projects.total}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Всего квартир</span>
-              <span className="text-2xl font-bold">{analytics.projects.totalApartments}</span>
-            </div>
-            <div className="flex items-center justify-between pt-3 border-t">
-              <span className="text-sm text-muted-foreground">Среднее кв. на проект</span>
-              <span className="text-xl font-bold">
-                {analytics.projects.total > 0
-                  ? Math.round(analytics.projects.totalApartments / analytics.projects.total)
-                  : 0}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      )}
     </div>
   );
 }

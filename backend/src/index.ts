@@ -26,6 +26,7 @@ import { crmPropertiesRouter } from './routes/crm-properties.routes';
 import { buyersRouter } from './routes/buyers.routes';
 import { uploadsRouter } from './routes/uploads.routes';
 import { analyticsRouter } from './routes/analytics.routes';
+import { settingsRouter } from './routes/settings.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { initializeBucket } from './lib/minio';
 
@@ -75,6 +76,7 @@ app.use('/api/crm-properties', crmPropertiesRouter);
 app.use('/api/buyers', buyersRouter);
 app.use('/api/uploads', uploadsRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/admin/settings', settingsRouter);
 
 // Error handling
 app.use(errorHandler);

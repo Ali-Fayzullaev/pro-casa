@@ -21,19 +21,28 @@ export interface AiStrategyResult {
 }
 
 export class DeepSeekService {
-    private readonly apiKey: string;
     private readonly apiUrl = 'https://api.deepseek.com/v1/chat/completions';
 
-    constructor() {
-        this.apiKey = process.env.DEEPSEEK_API_KEY || '';
-        if (!this.apiKey) {
-            console.warn('DEEPSEEK_API_KEY is not set');
+    private async getApiKey(): Promise<string> {
+        try {
+            // Try fetching from DB first
+            // We need to import prisma dynamically or ensure it's available. 
+            // Since this is a service, importing from lib/prisma is fine.
+            const prisma = require('../lib/prisma').default;
+            const setting = await prisma.systemSettings.findUnique({
+                where: { key: 'DEEPSEEK_API_KEY' }
+            });
+            if (setting?.value) return setting.value;
+        } catch (e) {
+            // console.warn("Could not fetch key from DB (migration might be pending):", e);
         }
+        return process.env.DEEPSEEK_API_KEY || '';
     }
 
     async generateStrategyJustification(context: PropertyContext): Promise<{ reasoning: string; script: string }> {
-        if (!this.apiKey) {
-            return { reasoning: "API ключ не настроен", script: "" };
+        const apiKey = await this.getApiKey();
+        if (!apiKey) {
+            return { reasoning: "API ключ не настроен (DB/Env)", script: "" };
         }
 
         const prompt = `
@@ -68,7 +77,7 @@ export class DeepSeekService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${this.apiKey}`,
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
                     },
                 }
@@ -88,7 +97,8 @@ export class DeepSeekService {
     }
 
     async determineStrategy(context: PropertyContext): Promise<AiStrategyResult> {
-        if (!this.apiKey) {
+        const apiKey = await this.getApiKey();
+        if (!apiKey) {
             return {
                 finalStrategy: context.activeStrategy,
                 reasoning: "AI недоступен, использована математическая модель.",
@@ -134,7 +144,7 @@ export class DeepSeekService {
                     temperature: 0.4,
                     response_format: { type: 'json_object' }
                 },
-                { headers: { 'Authorization': `Bearer ${this.apiKey}` } }
+                { headers: { 'Authorization': `Bearer ${apiKey}` } }
             );
 
             const result = JSON.parse(response.data.choices[0].message.content);
@@ -155,7 +165,8 @@ export class DeepSeekService {
     }
 
     async generateMarketingDescription(context: any): Promise<string> {
-        if (!this.apiKey) {
+        const apiKey = await this.getApiKey();
+        if (!apiKey) {
             return "API ключ не настроен";
         }
 
@@ -196,7 +207,7 @@ export class DeepSeekService {
                 },
                 {
                     headers: {
-                        'Authorization': `Bearer ${this.apiKey}`,
+                        'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json',
                     },
                 }
@@ -210,7 +221,8 @@ export class DeepSeekService {
     }
 
     async analyzeShowFeedbacks(feedbacks: string[]): Promise<{ suggestStrategyChange: boolean; criticalIssue: boolean; recommendation: string }> {
-        if (!this.apiKey) return { suggestStrategyChange: false, criticalIssue: false, recommendation: "" };
+        const apiKey = await this.getApiKey();
+        if (!apiKey) return { suggestStrategyChange: false, criticalIssue: false, recommendation: "" };
 
         const prompt = `
 ТЫ - АНАЛИТИК НЕДВИЖИМОСТИ.
@@ -239,7 +251,7 @@ ${feedbacks.map(f => `- ${f}`).join('\n')}
                     temperature: 0.5,
                     response_format: { type: 'json_object' }
                 },
-                { headers: { 'Authorization': `Bearer ${this.apiKey}` } }
+                { headers: { 'Authorization': `Bearer ${apiKey}` } }
             );
             return JSON.parse(response.data.choices[0].message.content);
         } catch (e) {

@@ -18,17 +18,22 @@ import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
 import { useState } from "react";
 import { Eye } from "lucide-react";
 import { SummaryDialog } from "./dialogs/SummaryDialog";
-import { DeadlineLabels, FunnelStageLabels } from "@/lib/translations";
+import { DeadlineLabels, FunnelStageLabels, StrategyTypeLabels } from "@/lib/translations";
 
 export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style, setNodeRef, attributes, listeners, isDragging, isOverlay }: any) {
     const [summaryOpen, setSummaryOpen] = useState(false);
+    const [initialPropertyId, setInitialPropertyId] = useState<string | null>(null);
+    const [user, setUser] = useState<any>(null);
 
-    const trustLevelColor =
-        seller.trustLevel >= 4
-            ? "text-yellow-500"
-            : seller.trustLevel >= 3
-                ? "text-blue-500"
-                : "text-gray-400";
+    // Load user for role check
+    useState(() => {
+        if (typeof window !== 'undefined') {
+            const u = localStorage.getItem("user");
+            if (u) setUser(JSON.parse(u));
+        }
+    });
+
+    const trustLevelColor = "text-muted-foreground";
 
     return (
         <>
@@ -37,7 +42,8 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                 style={style}
                 {...attributes}
                 {...listeners}
-                className={`mb-3 cursor-grab hover:shadow-md transition-shadow active:cursor-grabbing border-l-4 group ${seller.trustLevel >= 4 ? "border-l-yellow-400" : "border-l-blue-400"} ${isOverlay ? "shadow-xl scale-105 rotate-2 cursor-grabbing" : ""} ${isDragging ? "opacity-50" : ""}`}
+                className={`mb-3 cursor-grab hover:shadow-md transition-shadow active:cursor-grabbing border group ${isOverlay ? "shadow-xl scale-105 rotate-2 cursor-grabbing" : ""} ${isDragging ? "opacity-50" : ""}`}
+                onClick={() => onInterviewClick && onInterviewClick(seller.id)}
             >
                 <CardHeader className="p-4 pb-2 flex flex-row justify-between items-start space-y-0">
                     <div className="flex items-center gap-3">
@@ -72,11 +78,11 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                     <div className="mb-3">
                         {seller.deadline ? (
                             <Badge variant="destructive" className="h-5 text-[10px] px-2 w-full justify-center">
-                                🔥 Срочно: {DeadlineLabels[seller.deadline] || seller.deadline}
+                                Срочно: {DeadlineLabels[seller.deadline] || seller.deadline}
                             </Badge>
                         ) : (
                             <Badge variant="secondary" className="h-5 text-[10px] px-2 w-full justify-center text-muted-foreground bg-gray-100">
-                                💤 Пассивный
+                                Пассивный
                             </Badge>
                         )}
                     </div>
@@ -85,27 +91,61 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                     {seller.properties && seller.properties.length > 0 ? (
                         <div className="space-y-1.5 mb-3">
                             {seller.properties.slice(0, 3).map((p: any) => (
-                                <div key={p.id} className="flex items-center justify-between text-[10px] bg-gray-50 p-1.5 rounded border">
-                                    <span className="font-medium truncate max-w-[100px]" title={p.residentialComplex}>
-                                        {p.residentialComplex}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
-                                            {p.showsCount > 0 && (
-                                                <span className="flex items-center" title="Показы">
-                                                    <Eye className="h-3 w-3 mr-0.5" /> {p.showsCount}
-                                                </span>
-                                            )}
-                                            {p.leadsCount > 0 && (
-                                                <span className="flex items-center font-bold text-blue-600" title="Офферы">
-                                                    <FileText className="h-3 w-3 mr-0.5" /> {p.leadsCount}
-                                                </span>
+                                <div
+                                    key={p.id}
+                                    className="flex flex-col text-[10px] bg-gray-50 p-1.5 rounded border hover:bg-gray-100 cursor-pointer transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setInitialPropertyId(p.id);
+                                        setSummaryOpen(true);
+                                    }}
+                                >
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="font-medium truncate max-w-[100px]" title={p.residentialComplex}>
+                                            {p.residentialComplex}
+                                        </span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 text-[9px] text-muted-foreground">
+                                                {p.showsCount > 0 && (
+                                                    <span className="flex items-center" title="Показы">
+                                                        <Eye className="h-3 w-3 mr-0.5" /> {p.showsCount}
+                                                    </span>
+                                                )}
+                                                {p.leadsCount > 0 && (
+                                                    <span className="flex items-center font-bold text-blue-600" title="Офферы">
+                                                        <FileText className="h-3 w-3 mr-0.5" /> {p.leadsCount}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white">
+                                                {FunnelStageLabels[p.funnelStage] || p.funnelStage}
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    {/* AI Strategy Badge & Snippet */}
+                                    {p.activeStrategy && (
+                                        <div className="mt-1 flex flex-col gap-1">
+                                            <div className="flex items-center">
+                                                <Badge variant="secondary" className="w-fit text-[8px] h-3.5 px-1">
+                                                    {StrategyTypeLabels[p.activeStrategy] || p.activeStrategy}
+                                                </Badge>
+                                            </div>
+
+                                            {p.strategyExplanation && (
+                                                <div className="text-[9px] text-muted-foreground leading-tight line-clamp-2 pl-1 border-l-2 border-border">
+                                                    {(() => {
+                                                        try {
+                                                            const parsed = JSON.parse(p.strategyExplanation);
+                                                            return parsed.reasoning || parsed.text || p.strategyExplanation;
+                                                        } catch {
+                                                            return p.strategyExplanation;
+                                                        }
+                                                    })()}
+                                                </div>
                                             )}
                                         </div>
-                                        <Badge variant="outline" className="text-[9px] h-4 px-1 bg-white">
-                                            {FunnelStageLabels[p.funnelStage] || p.funnelStage}
-                                        </Badge>
-                                    </div>
+                                    )}
                                 </div>
                             ))}
                             {seller.properties.length > 3 && (
@@ -125,12 +165,20 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                             Всего: {seller._count?.properties || 0}
                         </div>
 
-                        <div className="flex gap-1" onPointerDown={(e) => e.stopPropagation()}>
+                        <div className="flex gap-1 relative z-10">
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary"
-                                onClick={() => setSummaryOpen(true)}
+                                className="h-7 w-7 p-0 text-muted-foreground hover:text-primary cursor-pointer"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log("Detail clicked");
+                                    setInitialPropertyId(null); // Reset when clicking main details
+                                    setSummaryOpen(true);
+                                }}
                                 title="Подробнее"
                             >
                                 <Eye className="h-3.5 w-3.5" />
@@ -138,28 +186,57 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-7 text-xs px-2"
-                                onClick={() => onAddProperty?.(seller.id)}
+                                className="h-7 text-xs px-2 cursor-pointer"
+                                onPointerDown={(e) => e.stopPropagation()}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onTouchStart={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onAddProperty) {
+                                        onAddProperty(seller.id);
+                                    }
+                                }}
                             >
                                 <Plus className="h-3 w-3 mr-1" />
                                 Объект
                             </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+
+                    {/* ADMIN ONLY: Show Broker Name */}
+                    {user?.role === 'ADMIN' && seller.broker && (
+                        <div className="mt-2 pt-2 border-t flex items-center gap-1 text-[10px] text-muted-foreground justify-between">
+                            <span className="opacity-70">Брокер:</span>
+                            <div className="flex items-center gap-1 font-medium text-foreground">
+                                <Avatar className="h-4 w-4">
+                                    <AvatarFallback className="text-[8px] bg-indigo-100 text-indigo-700">
+                                        {seller.broker.firstName?.[0]}{seller.broker.lastName?.[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span>{seller.broker.firstName} {seller.broker.lastName}</span>
+                            </div>
+                        </div>
+                    )}
+                </CardContent >
+            </Card >
 
             <SummaryDialog
                 open={summaryOpen}
                 onOpenChange={setSummaryOpen}
                 data={seller}
                 type="Seller"
+                initialActivePropertyId={initialPropertyId}
             />
         </>
     )
 }
 
 export function SellerCard(props: SellerCardProps) {
+    // Check if seller has any SOLD properties - if so, disable dragging
+    const hasSoldProperties = props.seller.properties?.some(
+        (p: any) => p.funnelStage === 'SOLD' || p.status === 'SOLD'
+    );
+
     const {
         attributes,
         listeners,
@@ -171,6 +248,7 @@ export function SellerCard(props: SellerCardProps) {
         id: props.seller.id,
         data: { type: "Seller", item: props.seller },
         animateLayoutChanges: (args) => defaultAnimateLayoutChanges({ ...args, wasDragging: true }),
+        disabled: hasSoldProperties, // Lock sellers with sold properties from moving
     });
 
     const style = {

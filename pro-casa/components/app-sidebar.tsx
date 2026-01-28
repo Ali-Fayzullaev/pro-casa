@@ -22,6 +22,8 @@ import {
   MessageCircle,
   FileText,
   Scale,
+  Settings,
+  Target,
 } from "lucide-react"
 import {
   Sidebar,
@@ -87,6 +89,13 @@ const menuItems: MenuSection[] = [
     url: "/dashboard/crm",
     roles: ["ADMIN", "BROKER"],
   },
+  // 2.1 Стратегии - справочник
+  {
+    title: "Стратегии (CASA)",
+    icon: Target, // Using Target icon imported below or I need to import it
+    url: "/dashboard/strategies",
+    roles: ["ADMIN", "BROKER"],
+  },
   // 3. Новостройки - collapsible
   {
     title: "Новостройки",
@@ -129,6 +138,7 @@ const adminMenuItem: MenuSection = {
     { title: "Пользователи", url: "/dashboard/users", icon: Users },
     { title: "Курсы", url: "/dashboard/courses", icon: GraduationCap },
     { title: "Все проекты", url: "/dashboard/admin/projects", icon: Building2 },
+    { title: "Настройки AI", url: "/dashboard/admin/settings", icon: Settings },
   ],
 }
 

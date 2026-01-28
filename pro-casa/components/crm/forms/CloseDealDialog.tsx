@@ -41,7 +41,7 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
     const { data: offers } = useQuery({
         queryKey: ["offers", propertyId],
         queryFn: async () => {
-            const res = await api.get(`/buyers/offers?propertyId=${propertyId}`);
+            const res = await api.get(`/buyers/offers/${propertyId}`);
             return res.data;
         },
         enabled: open
@@ -76,7 +76,7 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
                 confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
             }, 250);
 
-            toast.success("Сделка закрыта! Поздравляем! 🎉");
+            toast.success("Сделка закрыта! Поздравляем!");
             onOpenChange(false);
             onSuccess(); // Callback to move card visually or refresh
             queryClient.invalidateQueries({ queryKey: ["properties"] });
@@ -146,7 +146,7 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
 
                     <DialogFooter>
                         <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white" disabled={mutation.isPending}>
-                            {mutation.isPending ? "Закрытие..." : "🎉 Закрыть сделку"}
+                            {mutation.isPending ? "Закрытие..." : "Закрыть сделку"}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -5,29 +5,33 @@ export const createSellerSchema = z.object({
     // === 1. Основная информация о продавце ===
     firstName: z.string().min(2, "Имя слишком короткое"),
     lastName: z.string().min(2, "Фамилия слишком короткая"),
-    phone: z.string().regex(/^\+?[0-9]{10,12}$/, "Некорректный формат телефона"),
+    phone: z.string().regex(/^(\+?7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/, "Некорректный формат телефона"),
     city: z.string().optional(),
     source: z.string().optional(),
     managerComment: z.string().optional(),
 
     // === 2. Причина продажи и срочность ===
-    reason: z.enum(["SIZE_CHANGE", "RELOCATION", "INVESTMENT", "DIVORCE", "INHERITANCE", "FINANCIAL_NEED", "OTHER"]).optional(),
+    reason: z.enum(["SIZE_CHANGE", "RELOCATION", "INVESTMENT", "DIVORCE", "INHERITANCE", "FINANCIAL_NEED", "OTHER"], {
+        message: "Выберите причину продажи"
+    }).optional(),
     reasonOther: z.string().optional(),
-    deadline: z.enum(["URGENT_30_DAYS", "NORMAL_90_DAYS", "FLEXIBLE_180_DAYS", "NO_RUSH"]).optional(),
+    deadline: z.enum(["URGENT_30_DAYS", "NORMAL_90_DAYS", "FLEXIBLE_180_DAYS", "NO_RUSH"], {
+        message: "Выберите срочность"
+    }).optional(),
 
     // === 3. Ценовые ожидания ===
-    expectedPrice: z.coerce.number().positive().optional(),
-    minPrice: z.coerce.number().positive().optional(),
+    expectedPrice: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().positive("Цена должна быть положительной").optional()),
+    minPrice: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().positive("Цена должна быть положительной").optional()),
     readyToNegotiate: z.boolean().default(true),
     marketAssessment: z.enum(["ADEQUATE", "OVERPRICED", "UNCERTAIN"]).optional(),
 
     // === 4. Планы и Финансы ===
     plansToPurchase: z.boolean().default(false),
     nextPurchaseFormat: z.enum(["NEW_BUILDING", "SECONDARY", "HOUSE", "NOT_DECIDED"]).optional(),
-    purchaseBudget: z.coerce.number().positive().optional(),
+    purchaseBudget: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().positive("Бюджет должен быть положительным").optional()),
     incomeSource: z.enum(["EMPLOYMENT", "BUSINESS", "RENTAL_INCOME", "PENSION", "OTHER"]).optional(),
     hasDebts: z.boolean().default(false),
-    loanPaymentAmount: z.coerce.number().optional(),
+    loanPaymentAmount: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().optional()),
 
     // === 5. Коммуникация ===
     communicationChannel: z.string().optional(),
@@ -37,6 +41,14 @@ export const createSellerSchema = z.object({
     trustLevel: z.number().min(1).max(5).default(3),
     readyToFollowRecommendations: z.enum(["YES", "PARTIAL", "NO"]).optional(),
     readyForExclusive: z.boolean().default(false),
+}).superRefine((data, ctx) => {
+    if (data.reason === "OTHER" && (!data.reasonOther || data.reasonOther.length < 2)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Укажите причину",
+            path: ["reasonOther"]
+        });
+    }
 });
 
 export type CreateSellerValues = z.infer<typeof createSellerSchema>;
@@ -46,17 +58,18 @@ export const createPropertySchema = z.object({
     residentialComplex: z.string().min(2, "Укажите название ЖК"),
     district: z.string().min(2, "Укажите район"),
     address: z.string().min(5, "Адрес слишком короткий"),
-    rooms: z.coerce.number().min(1).max(10),
+    rooms: z.coerce.number().min(1, "Минимум 1 комната").max(10),
     area: z.coerce.number().min(10, "Минимальная площадь 10 м²"),
     floor: z.coerce.number().min(-1, "Этаж"),
     totalFloors: z.coerce.number().min(1, "Всего этажей"),
-    yearBuilt: z.coerce.number().min(1900).max(new Date().getFullYear() + 5),
+    yearBuilt: z.coerce.number().min(1900, "Год постройки неверный").max(new Date().getFullYear() + 5),
 
     // === 2. Дом и параметры ===
     buildingType: z.enum(["BRICK", "MONOLITH", "PANEL", "BLOCK", "MONOLITH_BRICK"]).default("MONOLITH"),
+    elevatorCount: z.coerce.number().min(0).default(0),
     kitchenArea: z.coerce.number().optional(),
-    ceilingHeight: z.coerce.number().min(2.0).max(5.0).default(2.7),
-    bathroomType: z.string().optional(), // Should map to Enum in UI consts
+    ceilingHeight: z.coerce.number().min(2.0, "Потолок слишком низкий").max(5.0).default(2.7),
+    bathroomType: z.string().optional(),
     balconyType: z.string().optional(),
 
     // === 3. Ремонт и состояние ===

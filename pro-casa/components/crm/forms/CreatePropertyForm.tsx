@@ -77,6 +77,7 @@ const REPAIR_STATES = [
 export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePropertyFormProps) {
     const queryClient = useQueryClient();
     const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
+    const [activeSections, setActiveSections] = useState<string[]>(["basic", "building", "repair", "pledge", "options", "media", "docs"]);
 
     // Reset state when opening/closing
     useEffect(() => {
@@ -99,6 +100,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
             totalFloors: 9,
             rooms: 1,
             yearBuilt: 2020,
+            elevatorCount: 1,
 
             // 2. Building
             buildingType: "MONOLITH",
@@ -169,6 +171,13 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
             // Don't close immediately, allow uploads
             if (data?.id) {
                 setCreatedPropertyId(data.id);
+                // Auto-focus on Media and Docs, collapse others to reduce noise
+                setActiveSections(["media", "docs"]);
+                // Scroll to media section
+                setTimeout(() => {
+                    const mediaSection = document.getElementById("accordion-item-media");
+                    mediaSection?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }, 100);
             } else {
                 // Fallback if no ID returned (shouldn't happen)
                 onOpenChange(false);
@@ -201,7 +210,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-4xl bg-gray-50 p-0 flex flex-col h-full relative">
+            <SheetContent className="w-full sm:max-w-4xl bg-gray-50 p-0 flex flex-col h-full z-[100]">
                 {/* AI Thinking Overlay */}
                 {isThinking && <StrategyLoader />}
 
@@ -230,7 +239,12 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                     <Form {...form}>
                         <form id="create-property-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-6">
 
-                            <Accordion type="multiple" defaultValue={["basic", "building", "repair", "pledge", "options", "media", "docs"]} className="w-full space-y-4">
+                            <Accordion
+                                type="multiple"
+                                value={activeSections}
+                                onValueChange={setActiveSections}
+                                className="w-full space-y-4"
+                            >
 
                                 {/* 1. ОСНОВНЫЕ ХАРАКТЕРИСТИКИ */}
                                 <AccordionItem value="basic" className="bg-white border rounded-lg px-4 shadow-sm border-l-4 border-l-indigo-500">
@@ -382,12 +396,25 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                                                     <SelectValue />
                                                                 </SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="z-[110]">
                                                                 {PROPERTY_TYPES.map(t => (
                                                                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                                                                 ))}
                                                             </SelectContent>
                                                         </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="elevatorCount"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Лифты (шт)</FormLabel>
+                                                        <FormControl>
+                                                            <Input type="number" {...field} />
+                                                        </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
@@ -461,7 +488,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                         </FormControl>
-                                                        <SelectContent>
+                                                        <SelectContent className="z-[110]">
                                                             {REPAIR_STATES.map(r => (
                                                                 <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
                                                             ))}
@@ -484,7 +511,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                                                 <SelectValue />
                                                             </SelectTrigger>
                                                         </FormControl>
-                                                        <SelectContent>
+                                                        <SelectContent className="z-[110]">
                                                             <SelectItem value="EXCELLENT">Отличное (заезжай и живи)</SelectItem>
                                                             <SelectItem value="GOOD">Хорошее (можно освежить)</SelectItem>
                                                             <SelectItem value="NEEDS_INVESTMENT">Требует вложений</SelectItem>
@@ -604,7 +631,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                                             <FormControl>
                                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="z-[110]">
                                                                 <SelectItem value="NONE">Без мебели</SelectItem>
                                                                 <SelectItem value="PARTIAL">Частично</SelectItem>
                                                                 <SelectItem value="FULL">Полностью</SelectItem>
@@ -623,7 +650,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                                             <FormControl>
                                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="z-[110]">
                                                                 <SelectItem value="NONE">Без техники</SelectItem>
                                                                 <SelectItem value="PARTIAL">Частично</SelectItem>
                                                                 <SelectItem value="FULL">Полностью</SelectItem>

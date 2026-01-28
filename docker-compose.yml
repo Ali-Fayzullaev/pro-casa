@@ -77,19 +77,20 @@ services:
       PORT: 3001
       NODE_ENV: "production"
       CORS_ORIGIN: "*"
-      # MinIO configuration
-      MINIO_ENDPOINT: minio
-      MINIO_PORT: "9000"
-      MINIO_ACCESS_KEY: minio_admin
-      MINIO_SECRET_KEY: minio_secret_password
-      MINIO_BUCKET: pro-casa-files
-      MINIO_USE_SSL: "false"
+      API_URL: "https://pro.casa.kz"
+      # MinIO configuration - DISABLED due to signature issues, using local storage
+      # MINIO_ENDPOINT: minio
+      # MINIO_PORT: "9000"
+      # MINIO_ACCESS_KEY: minio_admin
+      # MINIO_SECRET_KEY: minio_secret_password
+      # MINIO_BUCKET: pro-casa-files
+      # MINIO_USE_SSL: "false"
     ports:
       - "3001:3001"
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     networks:
       - pro-casa-network
@@ -142,6 +143,7 @@ services:
 volumes:
   postgres_data:
   minio_data:
+  uploads_data:
 
 networks:
   pro-casa-network:

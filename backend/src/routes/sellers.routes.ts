@@ -86,8 +86,9 @@ sellersRouter.get('/', async (req: Request, res: Response): Promise<void> => {
                             repairState: true,
                             ceilingHeight: true,
                             parkingType: true,
-                            showsCount: true, // NEW
-                            leadsCount: true, // NEW
+                            activeStrategy: true, // NEW
+                            showsCount: true,
+                            leadsCount: true,
                             offers: {
                                 select: {
                                     id: true,
@@ -315,7 +316,7 @@ sellersRouter.put(
 // PUT /api/sellers/:id/stage - Изменение этапа воронки
 // =========================================
 const updateStageSchema = z.object({
-    funnelStage: z.enum(['CONTACT', 'INTERVIEW', 'STRATEGY', 'CONTRACT_SIGNING']),
+    funnelStage: z.enum(['CONTACT', 'INTERVIEW', 'STRATEGY', 'CONTRACT_SIGNING', 'SOLD', 'ARCHIVED']),
 });
 
 sellersRouter.put(
@@ -340,12 +341,14 @@ sellersRouter.put(
             }
 
             // Валидация перехода этапов (нельзя перескакивать)
-            const stages = ['CONTACT', 'INTERVIEW', 'STRATEGY', 'CONTRACT_SIGNING'];
+            const stages = ['CONTACT', 'INTERVIEW', 'STRATEGY', 'CONTRACT_SIGNING', 'SOLD', 'ARCHIVED'];
             const currentIndex = stages.indexOf(existing.funnelStage);
             const newIndex = stages.indexOf(funnelStage);
 
-            // Можно двигаться только на 1 шаг вперёд или назад
-            if (Math.abs(newIndex - currentIndex) > 1) {
+            // SOLD и ARCHIVED можно устанавливать из любого этапа
+            // Для остальных - можно двигаться только на 1 шаг вперёд или назад
+            const isSpecialStage = funnelStage === 'SOLD' || funnelStage === 'ARCHIVED';
+            if (!isSpecialStage && Math.abs(newIndex - currentIndex) > 1) {
                 res.status(400).json({
                     error: 'Нельзя перескакивать этапы воронки',
                     currentStage: existing.funnelStage,

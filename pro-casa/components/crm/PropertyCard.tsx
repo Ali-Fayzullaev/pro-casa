@@ -10,12 +10,13 @@ interface PropertyCardProps {
     property: CrmProperty;
 }
 
+// Neutral gray-based class colors for minimalist design
 const CLASS_COLORS: Record<PropertyClass, string> = {
-    BUSINESS: "bg-purple-100 text-purple-700 border-purple-200",
-    COMFORT_PLUS: "bg-blue-100 text-blue-700 border-blue-200",
-    COMFORT: "bg-cyan-100 text-cyan-700 border-cyan-200",
-    ECONOMY: "bg-gray-100 text-gray-700 border-gray-200",
-    OLD_FUND: "bg-amber-100 text-amber-700 border-amber-200",
+    BUSINESS: "bg-secondary text-secondary-foreground border-border",
+    COMFORT_PLUS: "bg-secondary text-secondary-foreground border-border",
+    COMFORT: "bg-secondary text-secondary-foreground border-border",
+    ECONOMY: "bg-muted text-muted-foreground border-border",
+    OLD_FUND: "bg-muted text-muted-foreground border-border",
 };
 
 import { PropertyClassLabels, StrategyTypeLabels } from "@/lib/translations";
@@ -28,14 +29,24 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import api from "@/lib/api-client";
 import { useQueryClient } from "@tanstack/react-query";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SummaryDialog } from "./dialogs/SummaryDialog";
 import { StrategyLoader } from "@/components/ui/StrategyLoader";
 
-export function PropertyCardBase({ property, style, setNodeRef, attributes, listeners, isDragging, isOverlay }: { property: CrmProperty; style?: any; setNodeRef?: any; attributes?: any; listeners?: any; isDragging?: boolean; isOverlay?: boolean }) {
+export function PropertyCardBase({ property, style, setNodeRef, attributes, listeners, isDragging, isOverlay, isSold }: { property: CrmProperty; style?: any; setNodeRef?: any; attributes?: any; listeners?: any; isDragging?: boolean; isOverlay?: boolean; isSold?: boolean }) {
     const queryClient = useQueryClient();
     const [isGenerating, setIsGenerating] = useState(false);
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
+    const [user, setUser] = useState<any>(null);
+
+    // Load user
+    useState(() => {
+        if (typeof window !== 'undefined') {
+            const u = localStorage.getItem("user");
+            if (u) setUser(JSON.parse(u));
+        }
+    });
 
     const isCritical =
         property.activeStrategy === StrategyType.REJECT_OBJECT ||
@@ -83,8 +94,8 @@ export function PropertyCardBase({ property, style, setNodeRef, attributes, list
                 {...attributes}
                 {...listeners}
                 className={cn(
-                    "mb-3 cursor-grab hover:shadow-md transition-shadow active:cursor-grabbing border-l-4 group relative overflow-hidden", // Added overflow-hidden for loader
-                    isCritical ? "border-l-destructive border-destructive/50" : "border-l-primary/50",
+                    "mb-3 hover:shadow-md transition-shadow border group relative overflow-hidden",
+                    isSold ? "cursor-not-allowed opacity-75" : "cursor-grab active:cursor-grabbing",
                     isOverlay ? "shadow-xl scale-105 rotate-2 cursor-grabbing" : "",
                     isDragging ? "opacity-50" : ""
                 )}
@@ -212,8 +223,23 @@ export function PropertyCardBase({ property, style, setNodeRef, attributes, list
                             <span>{property.seller.firstName} {property.seller.lastName}</span>
                         </div>
                     )}
+
+                    {/* ADMIN ONLY: Broker Info */}
+                    {user?.role === 'ADMIN' && property.broker && (
+                        <div className="mt-2 pt-2 border-t flex items-center gap-1 text-[10px] text-muted-foreground justify-between">
+                            <span className="opacity-70">Брокер:</span>
+                            <div className="flex items-center gap-1 font-medium text-foreground">
+                                <Avatar className="h-4 w-4">
+                                    <AvatarFallback className="text-[8px] bg-indigo-100 text-indigo-700">
+                                        {property.broker.firstName?.[0]}{property.broker.lastName?.[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <span>{property.broker.firstName} {property.broker.lastName}</span>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
-            </Card>
+            </Card >
 
             <SummaryDialog
                 open={summaryOpen}
@@ -226,6 +252,9 @@ export function PropertyCardBase({ property, style, setNodeRef, attributes, list
 }
 
 export function PropertyCard({ property }: PropertyCardProps) {
+    // Disable dragging for SOLD properties (check both funnelStage and status)
+    const isSold = property.funnelStage === 'SOLD' || property.status === 'SOLD';
+
     const {
         attributes,
         listeners,
@@ -237,6 +266,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
         id: property.id,
         data: { type: "Property", item: property },
         animateLayoutChanges: (args) => defaultAnimateLayoutChanges({ ...args, wasDragging: true }),
+        disabled: isSold, // Lock sold properties from moving
     });
 
     const style = {
@@ -249,9 +279,10 @@ export function PropertyCard({ property }: PropertyCardProps) {
             property={property}
             style={style}
             setNodeRef={setNodeRef}
-            attributes={attributes}
-            listeners={listeners}
+            attributes={isSold ? {} : attributes}
+            listeners={isSold ? {} : listeners}
             isDragging={isDragging}
+            isSold={isSold}
         />
     );
 }

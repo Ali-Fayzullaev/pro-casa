@@ -194,8 +194,8 @@ export const BuyerStatusEnum = z.enum(['NEW', 'ACTIVE', 'OFFER_MADE', 'ARCHIVED'
 // Этап 1: КОНТАКТ (расширенная форма — Casa Pro Expansion)
 export const SellerContactStageSchema = z.object({
     // === 1. Основная информация ===
-    firstName: z.string().min(2, 'Минимум 2 символа'),
-    lastName: z.string().min(2, 'Минимум 2 символа'),
+    firstName: z.string().min(2, 'Имя: минимум 2 символа'),
+    lastName: z.string().min(2, 'Фамилия: минимум 2 символа'),
     phone: z.string().min(10, 'Некорректный формат телефона'),
     email: z.string().email('Некорректный email').optional().or(z.literal('')),
     city: z.string().optional(),
@@ -208,18 +208,18 @@ export const SellerContactStageSchema = z.object({
     deadline: SaleDeadlineEnum.optional(),
 
     // === 3. Ценовые ожидания (опционально) ===
-    expectedPrice: z.coerce.number().positive().optional(),
-    minPrice: z.coerce.number().positive().optional(),
+    expectedPrice: z.coerce.number().positive("Цена должна быть больше 0").optional(),
+    minPrice: z.coerce.number().positive("Цена должна быть больше 0").optional(),
     readyToNegotiate: z.coerce.boolean().default(true),
     marketAssessment: MarketAssessmentEnum.optional(),
 
     // === 4. Планы и финансы (опционально) ===
     plansToPurchase: z.coerce.boolean().default(false),
     nextPurchaseFormat: z.string().optional(),
-    purchaseBudget: z.coerce.number().positive().optional(),
+    purchaseBudget: z.coerce.number().positive("Бюджет должен быть больше 0").optional(),
     incomeSource: z.string().optional(),
     hasDebts: z.coerce.boolean().default(false),
-    loanPaymentAmount: z.coerce.number().nonnegative().optional(),
+    loanPaymentAmount: z.coerce.number().nonnegative("Сумма не может быть отрицательной").optional(),
 
     // === 5. Коммуникация ===
     communicationChannel: z.string().optional(),
@@ -238,7 +238,7 @@ export const SellerInterviewStageSchema = z.object({
     firstName: z.string().min(2, 'Минимум 2 символа'),
     lastName: z.string().min(2, 'Минимум 2 символа'),
     middleName: z.string().optional(),
-    phone: z.string().regex(/^\+7\d{10}$/, 'Формат: +7XXXXXXXXXX'),
+    phone: z.string().regex(/^(\+?7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/, 'Некорректный формат телефона'),
     email: z.string().email().optional().or(z.literal('')),
     iin: z.string().length(12, 'ИИН должен содержать 12 цифр').optional(),
 
@@ -272,6 +272,12 @@ export const SellerInterviewStageSchema = z.object({
     // === 6️⃣ Комментарии ===
     managerComment: z.string().optional(),
 
+    // Missing Fields (Fix for Persistence)
+    source: z.string().optional(),
+    communicationChannel: z.string().optional(),
+    preferredTime: z.string().optional(),
+    loanPaymentAmount: z.coerce.number().nonnegative().optional(),
+
     funnelStage: z.literal('INTERVIEW'),
 });
 
@@ -293,7 +299,7 @@ export const SellerUpdateSchema = z.object({
     firstName: z.string().min(2).optional(),
     lastName: z.string().min(2).optional(),
     middleName: z.string().optional(),
-    phone: z.string().regex(/^\+7\d{10}$/).optional(),
+    phone: z.string().regex(/^(\+?7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/).optional(),
     email: z.string().email().optional().or(z.literal('')),
     iin: z.string().length(12).optional(),
     reason: SaleReasonEnum.optional(),
@@ -314,6 +320,13 @@ export const SellerUpdateSchema = z.object({
     readyForExclusive: z.coerce.boolean().optional(),
     trustLevel: z.coerce.number().min(1).max(5).optional(),
     managerComment: z.string().optional(),
+
+    // Missing Fields Fix
+    source: z.string().optional(),
+    communicationChannel: z.string().optional(),
+    preferredTime: z.string().optional(),
+    loanPaymentAmount: z.coerce.number().nonnegative().optional(),
+
     funnelStage: SellerFunnelStageEnum.optional(),
     isActive: z.coerce.boolean().optional(),
 });
@@ -328,17 +341,18 @@ export const CrmPropertyMinimalSchema = z.object({
 
     // 1️⃣ Идентификация объекта
     propertyType: z.enum(['APARTMENT', 'STUDIO']).default('APARTMENT'),
-    rooms: z.coerce.number().int().min(1).max(10),
+    rooms: z.coerce.number().int().min(1, 'Минимум 1 комната').max(10),
     residentialComplex: z.string().min(2, 'Укажите ЖК или дом'),
     district: z.string().min(2, 'Укажите район'),
     address: z.string().optional(),
 
     // 2️⃣ Геометрия (ОБЯЗАТЕЛЬНО для классификации)
     area: z.coerce.number().positive('Укажите площадь'),
-    floor: z.coerce.number().int().min(-1).max(100),
-    totalFloors: z.coerce.number().int().min(1).max(100),
-    yearBuilt: z.coerce.number().int().min(1900).max(new Date().getFullYear() + 5),
+    floor: z.coerce.number().int().min(-1, 'Некорректный этаж').max(100),
+    totalFloors: z.coerce.number().int().min(1, 'Всего этажей: минимум 1').max(100),
+    yearBuilt: z.coerce.number().int().min(1900, 'Год постройки: от 1900').max(new Date().getFullYear() + 5),
     apartmentsPerFloor: z.coerce.number().int().min(1).max(20).optional(),
+    elevatorCount: z.coerce.number().int().min(0).optional(),
 
     // Цена
     price: z.coerce.number().positive('Укажите цену'),

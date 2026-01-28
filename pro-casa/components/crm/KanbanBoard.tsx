@@ -11,6 +11,7 @@ import {
     DragEndEvent,
     TouchSensor,
     closestCorners,
+    pointerWithin,
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query"; // NEW
@@ -24,17 +25,31 @@ import { ChecklistDialog } from "./dialogs/ChecklistDialog";
 import { MediaGatewayDialog } from "./dialogs/MediaGatewayDialog";
 import { toast } from "sonner";
 import { StrategyLoader } from "./StrategyLoader";
-import axios from "axios";
+import { StrategySelectDialog } from "./dialogs/StrategySelectDialog";
+import { AiStrategyConfirmDialog } from "./dialogs/AiStrategyConfirmDialog";
+import { StrategiesSheet } from "./sheets/StrategiesSheet";
+import api from "@/lib/api-client";
 import { useRouter } from "next/navigation";
-import { IncomingLeadSheet } from "./sheets/IncomingLeadSheet";
 import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
 import { CreateSellerForm } from "./forms/CreateSellerForm";
 import { CreatePropertyForm } from "./forms/CreatePropertyForm";
+import { Plus, Filter, Search, Target } from "lucide-react";
 
 type KanbanItem =
     | { type: "Seller"; item: Seller }
     | { type: "Property"; item: CrmProperty };
+
+const STAGE_DESCRIPTIONS: Record<string, string> = {
+    [SellerFunnelStage.CONTACT]: "Новые заявки. Только имя и телефон.\nСбор к.д, первичное касание.",
+    [SellerFunnelStage.INTERVIEW]: "Сбор детальной информации: причина, сроки, финансы.\nЗаполнение анкеты.",
+    [SellerFunnelStage.STRATEGY]: "Анализ AI и выбор стратегии продажи.\nАвтоматический подбор условий.",
+    [SellerFunnelStage.CONTRACT_SIGNING]: "Подписание договора и начало работы.\nОфициальное закрепление.",
+    [PropertyFunnelStage.PREPARATION]: "Подготовка объекта к продаже (Фото, Клининг).",
+    [PropertyFunnelStage.LEADS]: "Активное продвижение и сбор заявок.",
+    [PropertyFunnelStage.SHOWS]: "Организация и проведение показов.",
+    [PropertyFunnelStage.DEAL]: "Обсуждение условий и оформление сделки.",
+    [PropertyFunnelStage.SOLD]: "Сделка закрыта. Объект продан."
+};
 
 interface KanbanBoardProps {
     type: "sellers" | "properties";
@@ -46,6 +61,27 @@ interface KanbanBoardProps {
 
 export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: KanbanBoardProps) {
     const [activeItem, setActiveItem] = useState<KanbanItem | null>(null);
+    const router = useRouter();
+    const queryClient = useQueryClient();
+
+    // Strategies Sheet State
+    const [strategiesSheetOpen, setStrategiesSheetOpen] = useState(false);
+
+    // AI Dialog State
+    const [aiParams, setAiParams] = useState<{
+        open: boolean;
+        strategyCode: string | null;
+        explanation: string | null;
+    }>({ open: false, strategyCode: null, explanation: null });
+
+    // Strategy Dialog State
+    const [strategyDialogOpen, setStrategyDialogOpen] = useState(false);
+
+    // Form Control State
+    const [isSellerFormOpen, setIsSellerFormOpen] = useState(false);
+    const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
+    const [selectedSellerId, setSelectedSellerId] = useState<string>("");
+    const [selectedSellerData, setSelectedSellerData] = useState<any>(null); // For Edit Mode
 
     // Validation State
     const [missingDataOpen, setMissingDataOpen] = useState(false);
@@ -53,15 +89,6 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
     const [validationSellerId, setValidationSellerId] = useState<string | null>(null);
     const [validationProperties, setValidationProperties] = useState<any[]>([]);
     const [pendingStage, setPendingStage] = useState<string | null>(null);
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 5,
-            },
-        }),
-        useSensor(TouchSensor)
-    );
 
     // Gate States
     const [mediaOpen, setMediaOpen] = useState(false);
@@ -72,7 +99,34 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
 
     // AI Strategy State
     const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
-    const router = useRouter();
+
+    const handleAddProperty = (sellerId: string) => {
+        setSelectedSellerId(sellerId);
+        setIsPropertyFormOpen(true);
+    };
+
+    const handleEditSeller = (seller: Seller) => {
+        // RESTRICTION: Do not open edit form on click for CONTACT stage
+        // Use drags to move to INTERVIEW to fill data
+        if (seller.funnelStage === SellerFunnelStage.CONTACT) {
+            return;
+        }
+
+        setSelectedSellerId(seller.id);
+        setSelectedSellerData(seller);
+        setIsSellerFormOpen(true);
+    };
+
+
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        }),
+        useSensor(TouchSensor)
+    );
 
     const handleDragStart = (event: DragStartEvent) => {
         const { active } = event;
@@ -80,7 +134,105 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
         setActiveItem(data);
     };
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const analyzeStrategy = async (seller: Seller, stageToSet?: string | null) => {
+        // VISUAL LOADING STATE
+        setIsAiAnalyzing(true);
+        const loadingToast = toast.loading("AI анализирует объект...");
+
+        try {
+            const propertyId = seller.properties?.[0]?.id;
+
+            if (!propertyId) {
+                toast.dismiss(loadingToast);
+                setIsAiAnalyzing(false);
+                toast.error("Нет объекта недвижимости для анализа. Добавьте объект.");
+                return;
+            }
+
+            // Call recalculate-strategy
+            const res = await api.post(`/crm-properties/${propertyId}/recalculate-strategy`);
+
+            // RESPONSE PARSING FIX: Backend returns { property: { activeStrategy: ... } }
+            const { property } = res.data;
+            const activeStrategy = property?.activeStrategy;
+            const strategyExplanation = property?.strategyExplanation;
+
+            toast.dismiss(loadingToast);
+            setIsAiAnalyzing(false); // Stop loading
+
+            if (!activeStrategy) {
+                throw new Error("AI вернул пустую стратегию");
+            }
+
+            // Set pending stage if we are moving
+            if (stageToSet) {
+                setValidationSellerId(seller.id);
+                setPendingStage(stageToSet);
+            } else {
+                setValidationSellerId(seller.id);
+            }
+
+            // Open AI Dialog
+            setAiParams({
+                open: true,
+                strategyCode: activeStrategy,
+                explanation: strategyExplanation
+            });
+
+        } catch (err: any) {
+            console.error(err);
+            toast.dismiss(loadingToast);
+            setIsAiAnalyzing(false);
+            const msg = err.response?.data?.error || err.message || "Ошибка";
+            toast.error(`Ошибка AI анализа: ${msg} (Попробуйте обновить страницу)`);
+        }
+    };
+
+    const handleSellerFormSuccess = () => {
+        setIsSellerFormOpen(false);
+        queryClient.invalidateQueries({ queryKey: ["sellers"] }); // Ensure we fetch fresh data
+
+        // 1. If we were waiting for a stage move
+        if (validationSellerId && pendingStage) {
+
+            // SPECIAL CASE: Auto-trigger Strategy Analysis if moving to Strategy
+            if (pendingStage === SellerFunnelStage.STRATEGY) {
+                // We must find the seller to pass to analyzeStrategy. 
+                // Since we just saved, 'selectedSellerData' might be stale regarding the update, OR 
+                // we can rely on analyzeStrategy fetching fresh data via backend.
+                // We'll try to find it in items or use selectedSellerData (which has the ID).
+
+                let seller = selectedSellerData;
+                if (!seller) {
+                    seller = Object.values(items).flat().find(s => s.id === validationSellerId) as Seller | null;
+                }
+
+                if (seller) {
+                    // Trigger the analysis flow. 
+                    // IMPORTANT: analyzeStrategy needs to know validStage is pending to pass it to the dialog?
+                    // No, passing pendingStage to analyzeStrategy might be needed if it wasn't there.
+                    // But wait, analyzeStrategy(seller) usually doesn't take stage?
+                    // Let's check analyzeStrategy signature.
+                    analyzeStrategy(seller, pendingStage);
+                    return;
+                }
+            }
+
+            handleValidationSuccess();
+            return;
+        }
+
+        // 2. AUTO-STRATEGY: If coming from Edit Mode AND Seller is in STRATEGY Stage (already)
+        if (selectedSellerData && selectedSellerData.funnelStage === SellerFunnelStage.STRATEGY) {
+            analyzeStrategy(selectedSellerData);
+        }
+
+        // Reset
+        setSelectedSellerData(null);
+        setSelectedSellerId("");
+    };
+
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
 
         if (!over) {
@@ -96,13 +248,53 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
         if (type === "sellers" && itemData.type === "Seller") {
             const seller = itemData.item as Seller;
 
-            // GATE 1: To INTERVIEW
+            // STRICT FUNNEL: Define Order
+            const STAGE_ORDER = [
+                SellerFunnelStage.CONTACT,
+                SellerFunnelStage.INTERVIEW,
+                SellerFunnelStage.STRATEGY,
+                SellerFunnelStage.CONTRACT_SIGNING
+            ];
+
+            const currentIndex = STAGE_ORDER.indexOf(seller.funnelStage);
+            const newIndex = STAGE_ORDER.indexOf(newStage as SellerFunnelStage);
+
+            // 1. Block Backward Moves
+            if (newIndex < currentIndex) {
+                toast.error("Возврат на предыдущий этап запрещен");
+                setActiveItem(null);
+                return;
+            }
+
+            // 2. Block Skipping Stages (Must be sequential)
+            if (newIndex > currentIndex + 1) {
+                toast.error("Нельзя перепрыгивать этапы воронки");
+                setActiveItem(null);
+                return;
+            }
+
+            // GATE 1: To INTERVIEW (Progressive Data Entry)
             if (newStage === SellerFunnelStage.INTERVIEW) {
-                if (!seller.reason || !seller.deadline) {
+                // Check for required "Interview" fields (Reason, Deadline, Source, etc.)
+                // If missing, open Edit Form
+                const isComplete = seller.reason && seller.deadline && seller.source;
+
+                if (!isComplete) {
+                    toast.info("Для перехода на этап Интервью необходимо заполнить данные", {
+                        description: "Заполните анкету продавца",
+                        duration: 4000
+                    });
+
+                    // Set these states BEFORE opening form to ensure we know "why" we opened it
                     setValidationSellerId(seller.id);
                     setPendingStage(newStage);
-                    setMissingDataMode("INTERVIEW");
-                    setMissingDataOpen(true);
+
+                    // Open Edit Form
+                    setSelectedSellerId(seller.id);
+                    setSelectedSellerData(seller);
+                    setIsSellerFormOpen(true);
+
+                    // RESET drag immediately - do not allow staying in Interview without data
                     setActiveItem(null);
                     return;
                 }
@@ -110,61 +302,51 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
 
             // GATE 2: To STRATEGY
             if (newStage === SellerFunnelStage.STRATEGY) {
-                // Check 1: Must have at least one property
-                if (!seller.properties || seller.properties.length === 0) {
-                    toast.error("Нельзя сформировать стратегию без объектов. Добавьте недвижимость.");
+                if (seller.funnelStage === SellerFunnelStage.STRATEGY) {
                     setActiveItem(null);
                     return;
                 }
 
-                const needsData = seller.properties?.some(p =>
-                    !p.repairState || p.repairState === "NONE" || !p.ceilingHeight
-                );
+                // 1. Ensure Interview Data is present (Double Check)
+                const missingFields = [];
+                if (!seller.reason) missingFields.push("Причина продажи");
+                if (!seller.deadline) missingFields.push("Срочность");
+                if (!seller.source) missingFields.push("Источник");
 
-                if (needsData) {
+                if (missingFields.length > 0) {
+                    toast.warning("Для стратегии нужны данные", {
+                        description: `Заполните: ${missingFields.join(", ")}`,
+                        duration: 5000
+                    });
+
+                    // Interactive: Open Form to let user fix it immediately
                     setValidationSellerId(seller.id);
-                    setValidationProperties(seller.properties || []);
                     setPendingStage(newStage);
-                    setMissingDataMode("STRATEGY");
-                    setMissingDataOpen(true);
+
+                    setSelectedSellerId(seller.id);
+                    setSelectedSellerData(seller);
+                    setIsSellerFormOpen(true);
+
                     setActiveItem(null);
                     return;
                 }
 
-                // AI TRIGGER: Visual Magic
-                setIsAiAnalyzing(true);
-                // Optimistic move
-                onDragEnd(itemId, newStage);
+                // 2. Check if property exists
+                if (!seller.properties || seller.properties.length === 0) {
+                    toast.error("Нельзя перейти к Стратегии без объекта", {
+                        description: "Добавьте объект недвижимости в карточке продавца."
+                    });
+                    setActiveItem(null);
+                    return;
+                }
+
+                // Trigger AI Strategy Calculation
                 setActiveItem(null);
-
-                // Simulate/Run AI Analysis
-                const analyzeStrategies = async () => {
-                    try {
-                        // Artificial delay for animation (at least 3s as requested)
-                        await new Promise(r => setTimeout(r, 3000));
-
-                        // Call Backend for each property
-                        if (seller.properties && seller.properties.length > 0) {
-                            await Promise.all(seller.properties.map(p =>
-                                axios.post(`/api/crm-properties/${p.id}/recalculate-strategy`)
-                            ));
-                        }
-
-                        toast.success("AI Стратегия сформирована!");
-                        router.refresh(); // Refresh data to show new strategy/reasoning
-
-                    } catch (error) {
-                        console.error("AI Strategy Error", error);
-                        toast.error("Ошибка AI анализа");
-                    } finally {
-                        setIsAiAnalyzing(false);
-                    }
-                };
-
-                analyzeStrategies();
-                return; // Return early as we handled onDragEnd manually
-
+                analyzeStrategy(seller, newStage);
+                return;
             }
+
+
 
             // GATE 3: To CONTRACT
             if (newStage === SellerFunnelStage.CONTRACT_SIGNING) {
@@ -174,6 +356,8 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
                 setActiveItem(null);
                 return;
             }
+
+            // Removed manual block logic since generic strict funnel covers it
         }
 
         // --- VALIDATION: Property Stage Gates ---
@@ -210,44 +394,44 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
         }
     };
 
-    // --- PHASE 4: Simulated Lead State ---
-    const [leadSheetOpen, setLeadSheetOpen] = useState(false);
-    const [simulationSeller, setSimulationSeller] = useState<Seller | null>(null);
-    const [simulationProperty, setSimulationProperty] = useState<CrmProperty | null>(null);
+    const handleStrategySuccess = async (strategyConfig: string) => {
+        // Here we receive the chosen strategy code (e.g. 'MARKET_SALE')
+        // We need to update the backend OR just proceed if the backend handles it via side-effect?
+        // But we likely need to explicitly save the chosen strategy to the properties.
 
-    // Form Control State
-    const [isSellerFormOpen, setIsSellerFormOpen] = useState(false);
-    const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
+        // Since we don't have a direct "update seller strategy" endpoint that cascades, 
+        // we will manually update each property of the seller.
 
-    // Mutation to create real seller for simulation
-    const queryClient = useQueryClient();
-    const createSellerMutation = useMutation({
-        mutationFn: async (data: any) => {
-            return axios.post("/api/sellers", data);
-        },
-        onSuccess: (response) => {
-            const newSeller = response.data;
-            setSimulationSeller(newSeller);
-            setSimulationProperty(null); // No property initially
-            setLeadSheetOpen(true);
-            toast.success("Новый лид создан в базе!");
-            queryClient.invalidateQueries({ queryKey: ["sellers"] });
-        },
-        onError: () => toast.error("Ошибка при создании симуляции")
-    });
+        try {
+            // We need to know which seller. 'validationSellerId' holds it.
+            if (!validationSellerId) return;
 
-    const handleSimulateLead = () => {
-        // Create Logic: call API to create real "Incoming Lead"
-        const mockData = {
-            firstName: "Новый",
-            lastName: "Клиент", // Placeholder
-            phone: "+7 700 " + Math.floor(1000000 + Math.random() * 9000000), // Random phone
-            source: "INSTAGRAM",
-            city: "Алматы",
-            trustLevel: 1
-        };
-        createSellerMutation.mutate(mockData);
+            // Find the seller object to get properties
+            // We can search in the 'items' prop
+            let foundSeller: Seller | undefined;
+            Object.values(items).forEach(list => {
+                const s = (list as Seller[]).find(s => s.id === validationSellerId);
+                if (s) foundSeller = s;
+            });
+
+            if (foundSeller && foundSeller.properties) {
+                await Promise.all(foundSeller.properties.map(p =>
+                    api.patch(`/crm-properties/${p.id}`, { activeStrategy: strategyConfig })
+                ));
+            }
+
+            toast.success("Стратегия применена!");
+            handleValidationSuccess(); // Proceed to move the card
+            router.refresh();
+
+        } catch (error) {
+            console.error("Strategy save error", error);
+            toast.error("Не удалось сохранить стратегию");
+            setStrategyDialogOpen(false);
+        }
     };
+
+    // -------------------------------------
 
     // Refetch simulation seller when needed (e.g. after edit)
     // In a real app we'd use useQuery for the single seller, but here we can just rely on the list update or optimistic updates.
@@ -266,22 +450,25 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
     // -------------------------------------
 
     return (
-        <>
-            {/* Header / Simulation Controls */}
+        <div className="h-full flex flex-col space-y-4">
             <div className="flex justify-between items-center mb-4 px-1">
-                <h1 className="text-2xl font-bold text-gray-900">
-                    {type === "sellers" ? "Продавцы" : "Объекты"}
-                </h1>
-                {type === "sellers" && (
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        {type === "sellers" ? "Продавцы" : "Объекты"}
+                    </h1>
+                </div>
+
+                <div className="flex items-center gap-2">
                     <Button
                         variant="outline"
-                        className="gap-2 border-dashed border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100"
-                        onClick={handleSimulateLead}
+                        size="sm"
+                        onClick={() => setStrategiesSheetOpen(true)}
+                        className="hidden md:flex gap-2"
                     >
-                        <UserPlus className="h-4 w-4" />
-                        Simulate Incoming Lead
+                        <Target className="w-4 h-4 text-primary" />
+                        Стратегии
                     </Button>
-                )}
+                </div>
             </div>
 
             <DndContext
@@ -298,6 +485,7 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
                             id={col.id}
                             title={col.title}
                             count={items[col.id]?.length || 0}
+                            description={STAGE_DESCRIPTIONS[col.id]}
                         >
                             <SortableContext
                                 items={items[col.id]?.map((i) => i.id) || []}
@@ -307,7 +495,11 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
                                     {items[col.id]?.map((item) => (
                                         <div key={item.id}>
                                             {type === "sellers" ? (
-                                                <SellerCard seller={item as Seller} onAddProperty={onAddProperty} />
+                                                <SellerCard
+                                                    seller={item as Seller}
+                                                    onAddProperty={onAddProperty}
+                                                    onInterviewClick={() => handleEditSeller(item as Seller)}
+                                                />
                                             ) : (
                                                 <PropertyCard property={item as CrmProperty} />
                                             )}
@@ -319,19 +511,21 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
                     ))}
                 </div>
 
-                {typeof window !== "undefined" && createPortal(
-                    <DragOverlay dropAnimation={null}>
-                        {activeItem ? (
-                            activeItem.type === "Seller" ? (
-                                <SellerCardBase seller={activeItem.item as Seller} isOverlay />
-                            ) : (
-                                <PropertyCardBase property={activeItem.item as CrmProperty} isOverlay />
-                            )
-                        ) : null}
-                    </DragOverlay>,
-                    document.body
-                )}
-            </DndContext>
+                {
+                    typeof window !== "undefined" && createPortal(
+                        <DragOverlay dropAnimation={null}>
+                            {activeItem ? (
+                                activeItem.type === "Seller" ? (
+                                    <SellerCardBase seller={activeItem.item as Seller} isOverlay />
+                                ) : (
+                                    <PropertyCardBase property={activeItem.item as CrmProperty} isOverlay />
+                                )
+                            ) : null}
+                        </DragOverlay>,
+                        document.body
+                    )
+                }
+            </DndContext >
 
             <MissingDataDialog
                 open={missingDataOpen}
@@ -362,44 +556,62 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
                 onSuccess={handleValidationSuccess}
             />
 
-            {/* AI Magic Overlay */}
-            {isAiAnalyzing && createPortal(
-                <StrategyLoader />,
-                document.body
-            )}
+            <StrategySelectDialog
+                open={strategyDialogOpen}
+                onOpenChange={setStrategyDialogOpen}
+                sellerId={validationSellerId || ""}
+                onSuccess={handleStrategySuccess}
+            />
 
-            {/* Global Incoming Lead Sheet */}
-            <IncomingLeadSheet
-                open={leadSheetOpen}
-                onOpenChange={setLeadSheetOpen}
-                seller={simulationSeller}
-                property={simulationProperty}
-                onEditSeller={() => setIsSellerFormOpen(true)}
-                onOpenProperty={() => {
-                    // If property exists, maybe view it? For now, we only support ADDING in this flow as per task description for empty state. 
-                    // Or if editing is needed?
-                    setIsPropertyFormOpen(true);
+            <AiStrategyConfirmDialog
+                open={aiParams.open}
+                onOpenChange={(v) => setAiParams(prev => ({ ...prev, open: v }))}
+                strategyCode={aiParams.strategyCode}
+                explanation={aiParams.explanation}
+                onConfirm={() => {
+                    setAiParams(prev => ({ ...prev, open: false }));
+                    toast.success("Стратегия подтверждена!");
+                    handleValidationSuccess(); // Proceed move
+                    router.refresh();
                 }}
-                onConfirmStrategy={() => {
-                    setLeadSheetOpen(false);
-                    toast.success("Лид успешно квалифицирован и переведен в работу!");
+                onChange={() => {
+                    setAiParams(prev => ({ ...prev, open: false }));
+                    setStrategyDialogOpen(true); // Open manual select
                 }}
             />
+
+            <StrategiesSheet
+                open={strategiesSheetOpen}
+                onOpenChange={setStrategiesSheetOpen}
+            />
+
+            {/* AI Magic Overlay */}
+            {
+                isAiAnalyzing && createPortal(
+                    <StrategyLoader />,
+                    document.body
+                )
+            }
 
             {/* Forms */}
             <CreateSellerForm
                 open={isSellerFormOpen}
-                onOpenChange={setIsSellerFormOpen}
-                initialData={simulationSeller ? { ...simulationSeller } as any : undefined}
+                onOpenChange={(v) => {
+                    setIsSellerFormOpen(v);
+                    if (!v) {
+                        setSelectedSellerData(null); // Reset on close
+                        setSelectedSellerId("");
+                    }
+                }}
+                initialData={selectedSellerData}
+                onSuccess={handleSellerFormSuccess}
             />
 
-            {simulationSeller && (
-                <CreatePropertyForm
-                    open={isPropertyFormOpen}
-                    onOpenChange={setIsPropertyFormOpen}
-                    sellerId={simulationSeller.id}
-                />
-            )}
-        </>
+            <CreatePropertyForm
+                open={isPropertyFormOpen}
+                onOpenChange={setIsPropertyFormOpen}
+                sellerId={selectedSellerId}
+            />
+        </div >
     );
 }

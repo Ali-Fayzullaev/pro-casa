@@ -1,6 +1,6 @@
 
 import { z } from "zod";
-import { useForm } from "react-hook-form";
+import { useForm, Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -69,7 +69,7 @@ type CreateOfferInput = z.infer<typeof CreateOfferSchema>;
 export function CreateBuyerDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o: boolean) => void }) {
     const queryClient = useQueryClient();
     const form = useForm<CreateBuyerInput>({
-        resolver: zodResolver(CreateBuyerSchema),
+        resolver: zodResolver(CreateBuyerSchema) as any,
     });
 
     const mutation = useMutation({
@@ -134,7 +134,7 @@ export function CreateBuyerDialog({ open, onOpenChange }: { open: boolean, onOpe
 export function CreateShowDialog({ open, onOpenChange, propertyId }: { open: boolean, onOpenChange: (o: boolean) => void, propertyId: string }) {
     const queryClient = useQueryClient();
     const form = useForm<CreateShowInput>({
-        resolver: zodResolver(CreateShowSchema),
+        resolver: zodResolver(CreateShowSchema) as any,
     });
 
     // Fetch Buyers for selection
@@ -219,7 +219,7 @@ export function CreateShowDialog({ open, onOpenChange, propertyId }: { open: boo
 export function FeedbackDialog({ open, onOpenChange, showId, propertyId }: { open: boolean, onOpenChange: (o: boolean) => void, showId: string, propertyId: string }) {
     const queryClient = useQueryClient();
     const form = useForm<FeedbackInput>({
-        resolver: zodResolver(FeedbackSchema),
+        resolver: zodResolver(FeedbackSchema) as any,
         defaultValues: { sentiment: "NEUTRAL" }
     });
 
@@ -279,7 +279,7 @@ export function FeedbackDialog({ open, onOpenChange, showId, propertyId }: { ope
 export function CreateOfferDialog({ open, onOpenChange, propertyId }: { open: boolean, onOpenChange: (o: boolean) => void, propertyId: string }) {
     const queryClient = useQueryClient();
     const form = useForm<CreateOfferInput>({
-        resolver: zodResolver(CreateOfferSchema),
+        resolver: zodResolver(CreateOfferSchema) as any,
     });
 
     // Reuse buyers list logic or pass buyers

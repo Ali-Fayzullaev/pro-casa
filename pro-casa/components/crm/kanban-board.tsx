@@ -117,7 +117,7 @@ export function KanbanBoard() {
 
     const sellersFiltered = filterByMonth(sellersData?.sellers || []);
     const propertiesFiltered = filterByMonth(
-        (propertiesData?.properties || []).filter((p: CrmProperty) => p.funnelStage !== PropertyFunnelStage.CREATED)
+        (propertiesData?.properties || [])
     );
 
     const sellersGrouped = sellersFiltered.reduce(
@@ -199,14 +199,14 @@ export function KanbanBoard() {
                 <div className="flex gap-2 items-center">
                     <MonthFilter date={monthFilter} setDate={setMonthFilter} />
 
-                    <Button variant="outline" size="sm">
-                        <Filter className="mr-2 h-4 w-4" />
-                        Фильтры
-                    </Button>
-                    <Button size="sm" onClick={() => activeTab === "sellers" ? setIsSellerFormOpen(true) : null}>
-                        <Plus className="mr-2 h-4 w-4" />
-                        {activeTab === "sellers" ? "Новый продавец" : "Новый объект"}
-                    </Button>
+                    {/* Filter Button Removed as per request (not functional yet) */}
+
+                    {activeTab === "sellers" && (
+                        <Button size="sm" onClick={() => setIsSellerFormOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Новый продавец
+                        </Button>
+                    )}
                 </div>
             </div>
 

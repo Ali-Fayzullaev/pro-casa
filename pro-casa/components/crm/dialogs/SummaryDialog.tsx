@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CrmProperty, Seller } from "@/types/kanban";
-import { Building2, Wallet, Hammer, Brain, User, Calendar, MapPin, TrendingUp, AlertTriangle, MessageSquare, Home, Phone, Hash } from "lucide-react";
+import { Building2, Wallet, Hammer, Brain, User, Calendar, MapPin, TrendingUp, AlertTriangle, MessageSquare, Home, Phone, Hash, Info, Image as ImageIcon, X, ZoomIn } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InterestTab } from "./InterestTab";
@@ -22,22 +22,64 @@ import {
     RepairStateLabels,
     LiquidityLevelLabels
 } from "@/lib/translations";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api-client";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 interface SummaryDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     data: Seller | CrmProperty;
     type: "Seller" | "Property";
+    initialActivePropertyId?: string | null;
 }
 
-export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogProps) {
+export function SummaryDialog({ open, onOpenChange, data, type, initialActivePropertyId }: SummaryDialogProps) {
+    // 1. Internal Navigation State
+    const [activePropertyId, setActivePropertyId] = useState<string | null>(initialActivePropertyId || null);
+
+    // Sync init prop when opening
+    useState(() => {
+        if (open && initialActivePropertyId) {
+            setActivePropertyId(initialActivePropertyId);
+        }
+    });
+
+    // 2. Fetch Full Data (Sellers or Properties)
+    const { data: fetchedSeller } = useQuery({
+        queryKey: ["seller", data?.id],
+        queryFn: async () => {
+            const res = await api.get(`/sellers/${data.id}`);
+            return res.data;
+        },
+        enabled: open && type === "Seller" && !!data?.id,
+    });
+
+    const { data: fetchedProperty } = useQuery({
+        queryKey: ["property", data?.id],
+        queryFn: async () => {
+            const res = await api.get(`/crm-properties/${data.id}`);
+            return res.data;
+        },
+        enabled: open && type === "Property" && !!data?.id,
+    });
+
     if (!data) return null;
 
-    // Type checking
-    const isProperty = type === "Property";
-    const property = isProperty ? (data as CrmProperty) : null;
-    const simpleSeller = isProperty ? property?.seller : (data as Seller);
-    const fullSeller = !isProperty ? (data as Seller) : null;
+    // 3. Resolve View Data
+    const activeProperty = activePropertyId && fetchedSeller?.properties
+        ? fetchedSeller.properties.find((p: any) => p.id === activePropertyId)
+        : null;
+
+    const isProperty = type === "Property" || !!activePropertyId;
+
+    const property = isProperty
+        ? (type === "Property" ? (fetchedProperty || data as CrmProperty) : activeProperty)
+        : null;
+
+    const simpleSeller = isProperty ? property?.seller : (fetchedSeller || data as Seller);
+    const fullSeller = !isProperty ? (fetchedSeller || data as Seller) : null;
 
     // ... (keep helpers)
     const formatPrice = (p: string | number) => new Intl.NumberFormat("ru-RU", { style: "currency", currency: "KZT", maximumFractionDigits: 0 }).format(Number(p));
@@ -46,11 +88,29 @@ export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogP
     const parkingType = property?.parkingType || "—";
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-2xl max-h-[85vh] p-0 overflow-hidden flex flex-col">
+        <Dialog open={open} onOpenChange={(val) => {
+            onOpenChange(val);
+            if (!val) {
+                // Delay reset slightly to avoid flicker or reset immediately
+                setTimeout(() => setActivePropertyId(null), 300);
+            }
+        }}>
+            <DialogContent className="sm:max-w-2xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
                 <DialogHeader className="p-6 pb-4 border-b">
                     <div className="flex justify-between items-start gap-4">
                         <div>
+                            {/* Back Button for Drilldown */}
+                            {!!activePropertyId && type === "Seller" && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="mb-1 -ml-2 h-6 text-muted-foreground hover:text-primary gap-1 pl-2 pr-3"
+                                    onClick={() => setActivePropertyId(null)}
+                                >
+                                    <span className="text-lg leading-none pb-1">←</span> Назад к списку
+                                </Button>
+                            )}
+
                             <DialogTitle className="text-xl font-bold flex items-center gap-2">
                                 {isProperty ? property?.residentialComplex : `${simpleSeller?.firstName} ${simpleSeller?.lastName}`}
                                 {isProperty && property?.calculatedClass && (
@@ -112,11 +172,36 @@ export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogP
                         </TabsList>
                     </div>
 
-                    <ScrollArea className="flex-1 p-6">
-                        <TabsContent value="overview" className="mt-0 space-y-6">
+                    <div className="flex-1 overflow-y-auto p-6">
+                        <TabsContent value="overview" className="mt-0 space-y-6 pb-6">
                             {/* ================= PROPERTY VIEW ================= */}
                             {isProperty && property && (
                                 <>
+                                    {/* ========== SOLD DEAL INFO ========== */}
+                                    {(property.funnelStage === 'SOLD' || property.status === 'SOLD') && (
+                                        <div className="mb-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl">
+                                            <div className="flex items-center gap-2 mb-4">
+                                                <div className="bg-green-500 p-2 rounded-full">
+                                                    <TrendingUp className="h-5 w-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-green-800 text-lg">Сделка закрыта!</h3>
+                                                    <p className="text-xs text-green-600">Объект успешно продан</p>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                                <div className="bg-white/60 p-3 rounded-lg border border-green-100">
+                                                    <div className="text-xs text-muted-foreground mb-1">Финальная цена</div>
+                                                    <div className="font-bold text-green-700">{formatPrice(property.price)}</div>
+                                                </div>
+                                                <div className="bg-white/60 p-3 rounded-lg border border-green-100">
+                                                    <div className="text-xs text-muted-foreground mb-1">Дата закрытия</div>
+                                                    <div className="font-medium">{property.updatedAt ? new Date(property.updatedAt).toLocaleDateString('ru-RU') : '—'}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {/* AI RECOMMENDATION ALERT */}
                                     {property.aiRecommendation && (
                                         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3 text-red-900">
@@ -225,6 +310,12 @@ export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogP
                                                     <dd className="font-medium text-right">{property.floor}/{property.totalFloors}</dd>
                                                     <dt className="text-muted-foreground">Год</dt>
                                                     <dd className="font-medium text-right">{property.yearBuilt}</dd>
+                                                    {property.elevatorCount !== undefined && (
+                                                        <>
+                                                            <dt className="text-muted-foreground">Лифты</dt>
+                                                            <dd className="font-medium text-right">{property.elevatorCount} {property.hasFreightElevator ? '(+Груз)' : ''}</dd>
+                                                        </>
+                                                    )}
                                                 </dl>
                                             </div>
                                             <div>
@@ -257,16 +348,73 @@ export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogP
                                                     </dd>
                                                     <dt className="text-muted-foreground">Ипотека</dt>
                                                     <dd className="font-medium text-right">{property.financeType === 'CASH_ONLY' ? 'Только нал' : 'Доступна'}</dd>
+                                                    {property.isMortgaged && (
+                                                        <>
+                                                            <dt className="text-orange-600">В залоге</dt>
+                                                            <dd className="font-medium text-right text-orange-600">{property.mortgageBank}</dd>
+                                                            <dt className="text-muted-foreground">Остаток</dt>
+                                                            <dd className="font-medium text-right">{property.mortgageRemaining ? formatPrice(property.mortgageRemaining) : '—'}</dd>
+                                                        </>
+                                                    )}
                                                 </dl>
                                             </div>
+
+                                            {/* Extra Technical Details Block */}
+                                            <div className="pt-2 border-t mt-4">
+                                                <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-3 flex items-center gap-2">
+                                                    <Info className="h-3 w-3" /> Дополнительно
+                                                </h4>
+                                                <dl className="grid grid-cols-2 gap-y-2 text-xs">
+                                                    <dt className="text-muted-foreground">Мебель</dt>
+                                                    <dd className="text-right truncate">{property.furnitureLevel || "—"}</dd>
+                                                    <dt className="text-muted-foreground">Техника</dt>
+                                                    <dd className="text-right truncate">{property.appliancesLevel || "—"}</dd>
+                                                    {property.encumbranceType && property.encumbranceType !== 'NONE' && (
+                                                        <>
+                                                            <dt className="text-red-500">Обременение</dt>
+                                                            <dd className="text-right text-red-500 font-medium">{property.encumbranceType}</dd>
+                                                        </>
+                                                    )}
+                                                </dl>
+                                            </div>
+
                                             {property.seller && (
-                                                <div>
+                                                <div className="pt-2 border-t mt-4">
                                                     <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-3 flex items-center gap-2">
                                                         <User className="h-3 w-3" /> Продавец
                                                     </h4>
                                                     <div className="p-3 bg-gray-50 rounded-md border text-sm space-y-1">
                                                         <div className="font-medium">{property.seller.firstName} {property.seller.lastName}</div>
                                                         <div className="text-muted-foreground text-xs">{property.seller.phone}</div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* IMAGE GALLERY */}
+                                            {property.images && property.images.length > 0 && (
+                                                <div className="pt-4 border-t mt-4">
+                                                    <h4 className="text-xs font-semibold uppercase text-muted-foreground mb-3 flex items-center gap-2">
+                                                        <ImageIcon className="h-3 w-3" /> Фотографии ({property.images.length})
+                                                    </h4>
+                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                                                        {property.images.map((url: string, idx: number) => (
+                                                            <a
+                                                                key={idx}
+                                                                href={url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="group relative aspect-square rounded-lg overflow-hidden border bg-gray-100 hover:ring-2 hover:ring-primary/50 transition-all"
+                                                            >
+                                                                <img
+                                                                    src={url}
+                                                                    alt={`Фото ${idx + 1}`}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                                                />
+                                                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                                </div>
+                                                            </a>
+                                                        ))}
                                                     </div>
                                                 </div>
                                             )}
@@ -296,29 +444,21 @@ export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogP
 
                                         {fullSeller.properties && fullSeller.properties.length > 0 ? (
                                             <div className="space-y-3">
-                                                {fullSeller.properties.map((p) => (
+                                                {fullSeller.properties.map((p: any) => (
                                                     <div
                                                         key={p.id}
-                                                        onClick={() => {
-                                                            // Close dialog (handled by parent usually) or navigate
-                                                            // Since we are in a dialog, maybe we just want to switch the view to this property?
-                                                            // For now, let's just close and maybe toast, or if we had a router push.
-                                                            // Ideally, onOpenChange(false) and then open property. 
-                                                            // But simpler: just log or toast for now until we have property detail route.
-                                                            // UPDATE: User wants to "Go to objects".
-                                                            onOpenChange(false);
-                                                            // Assuming we have a way to filter or focus on property. 
-                                                            // For now, let's reload with a query param or similar? 
-                                                            // Or best, if we are in SPA, trigger a bus event.
-                                                            // Let's just create a link if possible, or simple "Coming soon" navigation.
-                                                            // Wait, in Kanban, we can just highlight it?
-                                                            toast.info(`Переход к объекту ${p.residentialComplex}`);
-                                                            // TODO: Implement actual navigation
-                                                        }}
+                                                        onClick={() => setActivePropertyId(p.id)}
                                                         className="group flex items-center justify-between p-4 border rounded-lg bg-card hover:shadow-sm transition-all hover:border-primary/50 cursor-pointer hover:bg-indigo-50/50"
                                                     >
                                                         <div>
-                                                            <div className="font-medium text-indigo-900 group-hover:text-indigo-700">{p.residentialComplex}</div>
+                                                            <div className="font-medium text-indigo-900 group-hover:text-indigo-700 flex items-center gap-2">
+                                                                {p.residentialComplex}
+                                                                {p.activeStrategy && (
+                                                                    <Badge variant="outline" className="text-[10px] h-4 px-1 bg-indigo-50 text-indigo-700 border-indigo-200">
+                                                                        {StrategyTypeLabels[p.activeStrategy] || p.activeStrategy}
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
                                                             <div className="text-sm text-muted-foreground mt-1">
                                                                 {formatPrice(p.price)}
                                                             </div>
@@ -360,10 +500,13 @@ export function SummaryDialog({ open, onOpenChange, data, type }: SummaryDialogP
 
                         {isProperty && property && (
                             <TabsContent value="interest" className="mt-0">
-                                <InterestTab propertyId={property.id} />
+                                <InterestTab
+                                    propertyId={property.id}
+                                    isSold={property.funnelStage === 'SOLD' || property.status === 'SOLD'}
+                                />
                             </TabsContent>
                         )}
-                    </ScrollArea>
+                    </div>
                 </Tabs>
             </DialogContent>
         </Dialog>

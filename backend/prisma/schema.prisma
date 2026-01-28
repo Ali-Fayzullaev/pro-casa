@@ -554,6 +554,7 @@ enum PropertyFunnelStage {
   LEADS         // Лиды
   SHOWS         // Показы
   DEAL          // Сделка
+  SOLD          // Продано (сделка закрыта)
   POST_SERVICE  // Постобслуживание
 }
 
@@ -798,6 +799,7 @@ model Buyer {
   notes     String?  @db.Text
   
   createdAt DateTime @default(now()) @map("created_at")
+
   updatedAt DateTime @updatedAt @map("updated_at")
   brokerId  String   @map("broker_id")
   
@@ -1047,4 +1049,13 @@ model PropertyCalculationLog {
   @@index([propertyId])
   @@index([createdAt])
   @@map("property_calculation_logs")
+}
+
+model SystemSettings {
+  key         String   @id
+  value       String   @db.Text
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_settings")
 }
