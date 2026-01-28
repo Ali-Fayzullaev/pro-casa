@@ -69,7 +69,6 @@ type CreateOfferInput = z.infer<typeof CreateOfferSchema>;
 export function CreateBuyerDialog({ open, onOpenChange }: { open: boolean, onOpenChange: (o: boolean) => void }) {
     const queryClient = useQueryClient();
     const form = useForm<CreateBuyerInput>({
-        // @ts-ignore
         resolver: zodResolver(CreateBuyerSchema),
     });
 
@@ -135,7 +134,6 @@ export function CreateBuyerDialog({ open, onOpenChange }: { open: boolean, onOpe
 export function CreateShowDialog({ open, onOpenChange, propertyId }: { open: boolean, onOpenChange: (o: boolean) => void, propertyId: string }) {
     const queryClient = useQueryClient();
     const form = useForm<CreateShowInput>({
-        // @ts-ignore
         resolver: zodResolver(CreateShowSchema),
     });
 
@@ -221,7 +219,6 @@ export function CreateShowDialog({ open, onOpenChange, propertyId }: { open: boo
 export function FeedbackDialog({ open, onOpenChange, showId, propertyId }: { open: boolean, onOpenChange: (o: boolean) => void, showId: string, propertyId: string }) {
     const queryClient = useQueryClient();
     const form = useForm<FeedbackInput>({
-        // @ts-ignore
         resolver: zodResolver(FeedbackSchema),
         defaultValues: { sentiment: "NEUTRAL" }
     });
@@ -282,7 +279,6 @@ export function FeedbackDialog({ open, onOpenChange, showId, propertyId }: { ope
 export function CreateOfferDialog({ open, onOpenChange, propertyId }: { open: boolean, onOpenChange: (o: boolean) => void, propertyId: string }) {
     const queryClient = useQueryClient();
     const form = useForm<CreateOfferInput>({
-        // @ts-ignore
         resolver: zodResolver(CreateOfferSchema),
     });
 
