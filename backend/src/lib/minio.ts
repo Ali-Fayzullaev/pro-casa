@@ -20,8 +20,20 @@ export const MINIO_BUCKET = process.env.MINIO_BUCKET || 'pro-casa-files';
 
 // Get public URL for a file
 export const getPublicUrl = (fileName: string): string => {
-  if (!minioEndpoint) {
-    // Local storage fallback
+  // Check if using local storage (MinIO disabled)
+  if (!minioClient || !minioEndpoint) {
+    // In production, files are served via Nginx at /uploads/
+    // In development (local), served via backend express static /uploads/
+
+    // Check if we are in browser or server
+    // If backend generating URL:
+    if (process.env.NODE_ENV === 'production') {
+      const apiUrl = process.env.API_URL || 'https://pro.casa.kz';
+      // Note: Nginx typically serves uploads from root domain or API domain
+      // If we configure Nginx to serve /uploads, then:
+      return `${apiUrl}/uploads/${fileName}`;
+    }
+
     const apiUrl = process.env.API_URL || 'http://localhost:3001';
     return `${apiUrl}/uploads/${fileName}`;
   }

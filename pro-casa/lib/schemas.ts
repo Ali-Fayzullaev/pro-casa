@@ -5,33 +5,38 @@ export const createSellerSchema = z.object({
     // === 1. Основная информация о продавце ===
     firstName: z.string().min(2, "Имя слишком короткое"),
     lastName: z.string().min(2, "Фамилия слишком короткая"),
-    phone: z.string().regex(/^(\+?7|8)?[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/, "Некорректный формат телефона"),
+    phone: z.preprocess(
+        // Нормализация номера: убираем пробелы, скобки, тире
+        (val) => {
+            if (typeof val === 'string') {
+                return val.replace(/[\s\-\(\)]/g, '');
+            }
+            return val;
+        },
+        z.string().regex(/^(\+?7|8)?[0-9]{10}$/, "Некорректный формат телефона")
+    ),
     city: z.string().optional(),
     source: z.string().optional(),
     managerComment: z.string().optional(),
 
     // === 2. Причина продажи и срочность ===
-    reason: z.enum(["SIZE_CHANGE", "RELOCATION", "INVESTMENT", "DIVORCE", "INHERITANCE", "FINANCIAL_NEED", "OTHER"], {
-        message: "Выберите причину продажи"
-    }).optional(),
+    reason: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.enum(["SIZE_CHANGE", "RELOCATION", "INVESTMENT", "DIVORCE", "INHERITANCE", "FINANCIAL_NEED", "OTHER"]).optional()),
     reasonOther: z.string().optional(),
-    deadline: z.enum(["URGENT_30_DAYS", "NORMAL_90_DAYS", "FLEXIBLE_180_DAYS", "NO_RUSH"], {
-        message: "Выберите срочность"
-    }).optional(),
+    deadline: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.enum(["URGENT_30_DAYS", "NORMAL_90_DAYS", "FLEXIBLE_180_DAYS", "NO_RUSH"]).optional()),
 
     // === 3. Ценовые ожидания ===
-    expectedPrice: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().positive("Цена должна быть положительной").optional()),
-    minPrice: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().positive("Цена должна быть положительной").optional()),
+    expectedPrice: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.coerce.number().positive("Цена должна быть положительной").optional()),
+    minPrice: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.coerce.number().positive("Цена должна быть положительной").optional()),
     readyToNegotiate: z.boolean().default(true),
-    marketAssessment: z.enum(["ADEQUATE", "OVERPRICED", "UNCERTAIN"]).optional(),
+    marketAssessment: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.enum(["ADEQUATE", "OVERPRICED", "UNCERTAIN"]).optional()),
 
     // === 4. Планы и Финансы ===
     plansToPurchase: z.boolean().default(false),
-    nextPurchaseFormat: z.enum(["NEW_BUILDING", "SECONDARY", "HOUSE", "NOT_DECIDED"]).optional(),
-    purchaseBudget: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().positive("Бюджет должен быть положительным").optional()),
-    incomeSource: z.enum(["EMPLOYMENT", "BUSINESS", "RENTAL_INCOME", "PENSION", "OTHER"]).optional(),
+    nextPurchaseFormat: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.enum(["NEW_BUILDING", "SECONDARY", "HOUSE", "NOT_DECIDED"]).optional()),
+    purchaseBudget: z.preprocess(val => (val === "" || val === null || val === undefined || val === 0) ? undefined : val, z.coerce.number().positive("Бюджет должен быть положительным").optional()),
+    incomeSource: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.enum(["EMPLOYMENT", "BUSINESS", "RENTAL_INCOME", "PENSION", "OTHER"]).optional()),
     hasDebts: z.boolean().default(false),
-    loanPaymentAmount: z.preprocess(val => val === "" ? undefined : val, z.coerce.number().optional()),
+    loanPaymentAmount: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.coerce.number().optional()),
 
     // === 5. Коммуникация ===
     communicationChannel: z.string().optional(),
@@ -39,7 +44,7 @@ export const createSellerSchema = z.object({
 
     // === Legacy fields ===
     trustLevel: z.number().min(1).max(5).default(3),
-    readyToFollowRecommendations: z.enum(["YES", "PARTIAL", "NO"]).optional(),
+    readyToFollowRecommendations: z.preprocess(val => (val === "" || val === null || val === undefined) ? undefined : val, z.enum(["YES", "PARTIAL", "NO"]).optional()),
     readyForExclusive: z.boolean().default(false),
 }).superRefine((data, ctx) => {
     if (data.reason === "OTHER" && (!data.reasonOther || data.reasonOther.length < 2)) {

@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Plus, Copy, ExternalLink } from "lucide-react";
+import { Plus, Copy, ExternalLink, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { getApiUrl, getAuthHeaders } from "@/lib/api-config";
+import { BrokerLinksDialog } from "@/components/crm/forms/BrokerLinksDialog";
 
 interface LeadForm {
     id: string;
@@ -23,6 +24,8 @@ export default function FormsListPage() {
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<string>('');
     const [userId, setUserId] = useState<string>('');
+    const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
+    const [linksDialogOpen, setLinksDialogOpen] = useState(false);
 
     useEffect(() => {
         // Get user info
@@ -128,11 +131,24 @@ export default function FormsListPage() {
                                 {form.distributionType === 'MANUAL' && (
                                     <>
                                         {userRole === 'ADMIN' && (
-                                            <Link href={`/dashboard/forms/${form.id}`} className="w-full">
-                                                <Button variant="secondary" size="sm" className="w-full justify-start">
-                                                    <ExternalLink className="mr-2 h-3 w-3" /> Редактировать
+                                            <>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="w-full justify-start mb-2"
+                                                    onClick={() => {
+                                                        setSelectedForm(form);
+                                                        setLinksDialogOpen(true);
+                                                    }}
+                                                >
+                                                    <LinkIcon className="mr-2 h-3 w-3" /> Ссылки брокеров
                                                 </Button>
-                                            </Link>
+                                                <Link href={`/dashboard/forms/${form.id}`} className="w-full">
+                                                    <Button variant="secondary" size="sm" className="w-full justify-start">
+                                                        <ExternalLink className="mr-2 h-3 w-3" /> Редактировать
+                                                    </Button>
+                                                </Link>
+                                            </>
                                         )}
                                         {userRole === 'BROKER' && (
                                             <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => copyLink(form.id, userId)}>
@@ -171,6 +187,12 @@ export default function FormsListPage() {
                     </div>
                 )}
             </div>
+
+            <BrokerLinksDialog
+                open={linksDialogOpen}
+                onOpenChange={setLinksDialogOpen}
+                form={selectedForm}
+            />
         </div>
     );
 }

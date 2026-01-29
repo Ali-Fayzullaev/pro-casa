@@ -17,8 +17,9 @@ publicFormsRouter.get('/:id', async (req: Request, res: Response): Promise<void>
             return;
         }
         res.json(form);
-    } catch (error) {
-        res.status(500).json({ error: 'Internal server error' });
+    } catch (error: any) {
+        console.error('Get public form error:', error);
+        res.status(500).json({ error: 'Internal server error', details: error.message });
     }
 });
 
@@ -119,61 +120,54 @@ publicFormsRouter.post('/:id/submit', async (req: Request, res: Response): Promi
             .map(([key, value]) => `${key}: ${value}`)
             .join('\n');
 
-        // Check/Create Client
-        let client;
-        if (phoneVal) {
-            client = await prisma.client.findFirst({ where: { phone: phoneVal } });
-            if (!client) {
-                client = await prisma.client.create({
-                    data: {
-                        firstName: nameVal,
-                        lastName: 'Form Lead',
-                        phone: phoneVal,
-                        brokerId: assignedBrokerId,
-                        iin: `LEAD-${Date.now()}`,
-                        status: 'NEW',
-                        clientType: 'BUYER',
-                        budget: parseFloat(budgetVal) || 0, // Map Budget
-                        notes: `Источник: Форма "${form.title}"`
-                    }
-                });
-            }
+        // Parse Name (Split into First/Last)
+        const parts = nameVal.trim().split(/\s+/);
+        const firstName = parts[0] || 'Unknown';
+        const lastName = parts.slice(1).join(' ');
+
+        // Check if Seller already exists
+        let seller = await prisma.seller.findFirst({ where: { phone: phoneVal } });
+
+        if (!seller) {
+            // Create new Seller (Lead)
+            seller = await prisma.seller.create({
+                data: {
+                    brokerId: assignedBrokerId,
+                    firstName,
+                    lastName,
+                    phone: phoneVal,
+                    source: `FORM: ${form.title}`,
+                    managerComment: `Данные формы:\n${fullNoteContent}\n\n${isFallback ? '[WARNING: No brokers assigned, sent to Admin]' : ''}\n${brokerId ? '[PERSONAL LINK]' : ''}`,
+                    funnelStage: 'CONTACT', // Start stage of Seller Funnel
+                }
+            });
+
+            // Notify Broker
+            await prisma.notification.create({
+                data: {
+                    userId: assignedBrokerId,
+                    type: 'DEAL',
+                    title: 'Новый лид',
+                    message: `Новая заявка "${form.title}" от ${firstName} ${lastName}. Телефон: ${phoneVal}`,
+                    isRead: false
+                }
+            });
+
+            res.json({ success: true, message: 'Application received', sellerId: seller.id });
+        } else {
+            // Updated existing seller notes or notify broker about return
+            await prisma.notification.create({
+                data: {
+                    userId: assignedBrokerId,
+                    type: 'SYSTEM',
+                    title: 'Повторная заявка',
+                    message: `Существующий клиент ${firstName} ${lastName} (${phoneVal}) оставил повторную заявку через форму "${form.title}".`,
+                    isRead: false
+                }
+            });
+
+            res.json({ success: true, message: 'Application received (Existing client)', sellerId: seller.id });
         }
-
-        const deal = await prisma.deal.create({
-            data: {
-                brokerId: assignedBrokerId,
-                clientId: client?.id,
-                amount: parseFloat(budgetVal) || 0, // Map Budget
-                commission: 0,
-                casaFee: 0,
-                notes: `Заявка с сайта (${form.title})
-[FORM_ID: ${form.id}]
-${isFallback ? '[WARNING: No brokers assigned to form, sent to Admin]\n' : ''}
-${brokerId ? `[PERSONAL LINK - Broker ID: ${brokerId}]` : form.distributionType === 'ROUND_ROBIN' ? '[AUTO-DISTRIBUTED via Round Robin]' : '[MANUAL ASSIGNMENT]'}
-
-Данные формы:
-${fullNoteContent}`,
-                source: brokerId ? 'FORM_PERSONAL' : 'BOT_DISTRIBUTION',
-                stage: DealStage.CONSULTATION,
-                status: DealStatus.IN_PROGRESS,
-                objectType: 'PROPERTY',
-                // We could map objectType from typeVal if it matches enum/string expected
-            }
-        });
-
-        // Notify Broker
-        await prisma.notification.create({
-            data: {
-                userId: assignedBrokerId,
-                type: 'DEAL',
-                title: 'Новая заявка',
-                message: `Поступила новая заявка "${form.title}" от ${nameVal}. Бюджет: ${budgetVal}`,
-                isRead: false
-            }
-        });
-
-        res.json({ success: true, message: 'Application received', dealId: deal.id });
 
     } catch (error: any) {
         console.error('Submit form error - DETAILED:', {

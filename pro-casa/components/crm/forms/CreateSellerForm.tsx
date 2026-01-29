@@ -124,7 +124,6 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
             marketAssessment: initialData?.marketAssessment as any,
             nextPurchaseFormat: initialData?.nextPurchaseFormat as any,
             purchaseBudget: initialData?.purchaseBudget,
-            incomeSource: initialData?.incomeSource as any,
             loanPaymentAmount: initialData?.loanPaymentAmount,
             communicationChannel: initialData?.communicationChannel || "",
             preferredTime: initialData?.preferredTime || "",
@@ -154,7 +153,6 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
                 marketAssessment: initialData.marketAssessment as any,
                 nextPurchaseFormat: initialData.nextPurchaseFormat as any,
                 purchaseBudget: initialData.purchaseBudget,
-                incomeSource: initialData.incomeSource as any,
                 loanPaymentAmount: initialData.loanPaymentAmount,
                 communicationChannel: initialData.communicationChannel || "",
                 preferredTime: initialData.preferredTime || "",
@@ -206,7 +204,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
             if (["firstName", "lastName", "phone", "city", "source", "managerComment"].includes(key)) sectionsToOpen.add("basic");
             if (["reason", "deadline", "reasonOther"].includes(key)) sectionsToOpen.add("reason");
             if (["expectedPrice", "minPrice", "readyToNegotiate", "marketAssessment"].includes(key)) sectionsToOpen.add("price");
-            if (["plansToPurchase", "nextPurchaseFormat", "purchaseBudget", "incomeSource", "hasDebts", "loanPaymentAmount"].includes(key)) sectionsToOpen.add("plans");
+            if (["plansToPurchase", "nextPurchaseFormat", "purchaseBudget", "hasDebts", "loanPaymentAmount"].includes(key)) sectionsToOpen.add("plans");
             if (["communicationChannel", "preferredTime"].includes(key)) sectionsToOpen.add("communication");
         });
 
@@ -610,6 +608,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
                                                                     type="number"
                                                                     placeholder="50 000 000"
                                                                     {...field}
+                                                                    value={field.value ?? ""}
                                                                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                 />
                                                             </FormControl>
@@ -628,6 +627,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
                                                                     type="number"
                                                                     placeholder="45 000 000"
                                                                     {...field}
+                                                                    value={field.value ?? ""}
                                                                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                 />
                                                             </FormControl>
@@ -753,6 +753,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
                                                                         type="number"
                                                                         placeholder="60 000 000"
                                                                         {...field}
+                                                                        value={field.value ?? ""}
                                                                         onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                     />
                                                                 </FormControl>
@@ -762,31 +763,6 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
                                                     />
                                                 </div>
                                             )}
-
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <FormField
-                                                    control={form.control}
-                                                    name="incomeSource"
-                                                    render={({ field }) => (
-                                                        <FormItem>
-                                                            <FormLabel>Источник дохода</FormLabel>
-                                                            <Select onValueChange={field.onChange} value={field.value || ""}>
-                                                                <FormControl>
-                                                                    <SelectTrigger>
-                                                                        <SelectValue placeholder="Выберите" />
-                                                                    </SelectTrigger>
-                                                                </FormControl>
-                                                                <SelectContent>
-                                                                    {INCOME_SOURCES.map((i) => (
-                                                                        <SelectItem key={i.value} value={i.value}>{i.label}</SelectItem>
-                                                                    ))}
-                                                                </SelectContent>
-                                                            </Select>
-                                                            <FormMessage />
-                                                        </FormItem>
-                                                    )}
-                                                />
-                                            </div>
 
                                             <FormField
                                                 control={form.control}
@@ -820,6 +796,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess }:
                                                                         type="number"
                                                                         placeholder="150 000"
                                                                         {...field}
+                                                                        value={field.value ?? ""}
                                                                         onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                     />
                                                                 </FormControl>
@@ -913,7 +890,7 @@ function calculateProgress(values: Partial<CreateSellerValues>) {
         basic: Boolean(values.firstName && values.lastName && values.phone && values.phone.length > 3),
         reason: Boolean(values.reason || values.deadline),
         price: Boolean(values.expectedPrice || values.minPrice),
-        plans: Boolean(values.incomeSource || values.plansToPurchase !== undefined),
+        plans: Boolean(values.plansToPurchase || values.hasDebts),
         communication: Boolean(values.communicationChannel || values.preferredTime),
     };
 

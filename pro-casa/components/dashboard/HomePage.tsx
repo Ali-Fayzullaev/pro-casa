@@ -43,6 +43,16 @@ interface DashboardData {
         activeStrategy: string;
         liquidityScore: number;
     }>;
+    brokersPerformance?: Array<{
+        id: number;
+        name: string;
+        totalProperties: number;
+        activeProperties: number;
+        completedDeals: number;
+        soldDeals: number;
+        commissionForecast: number;
+        conversionRate: number;
+    }>;
 }
 
 export function HomePage() {
@@ -105,29 +115,31 @@ export function HomePage() {
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <KpiCard
-                    title="Активные сделки"
+                    title={user?.role === "DEVELOPER" ? "Проектов" : "Активные сделки"}
                     value={data?.kpi.activeDeals || 0}
                     icon={Briefcase}
                     color="text-blue-600"
                     bg="bg-blue-50"
                 />
                 <KpiCard
-                    title="Прогноз комиссии"
-                    value={`${(data?.kpi.commissionForecast || 0).toLocaleString()} ₸`}
+                    title={user?.role === "DEVELOPER" ? "Квартир" : "Прогноз комиссии"}
+                    value={user?.role === "DEVELOPER"
+                        ? (data?.kpi.commissionForecast || 0)
+                        : `${(data?.kpi.commissionForecast || 0).toLocaleString()} ₸`}
                     icon={DollarSign}
                     color="text-green-600"
                     bg="bg-green-50"
                 />
                 <KpiCard
-                    title="Горячие лиды"
+                    title={user?.role === "DEVELOPER" ? "Броней" : "Горячие лиды"}
                     value={data?.kpi.hotLeads || 0}
                     icon={Users}
                     color="text-orange-600"
                     bg="bg-orange-50"
                 />
                 <KpiCard
-                    title="Конверсия"
-                    value={`${data?.kpi.conversionRate}%`}
+                    title={user?.role === "DEVELOPER" ? "Статус" : "Конверсия"}
+                    value={user?.role === "DEVELOPER" ? "Active" : `${data?.kpi.conversionRate}%`}
                     icon={TrendingUp}
                     color="text-purple-600"
                     bg="bg-purple-50"
@@ -214,6 +226,62 @@ export function HomePage() {
                     </Card>
                 </div>
             </div>
+
+            {/* ADMIN ONLY: Brokers Performance */}
+            {user?.role === 'ADMIN' && data?.brokersPerformance && data.brokersPerformance.length > 0 && (
+                <Card className="shadow-md">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5 text-purple-500" />
+                            Показатели брокеров
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="border-b text-muted-foreground">
+                                        <th className="text-left py-2 font-medium">Брокер</th>
+                                        <th className="text-center py-2 font-medium">Объекты</th>
+                                        <th className="text-center py-2 font-medium">Активные</th>
+                                        <th className="text-center py-2 font-medium">Сделки</th>
+                                        <th className="text-center py-2 font-medium">Продано</th>
+                                        <th className="text-right py-2 font-medium">Комиссия</th>
+                                        <th className="text-center py-2 font-medium">Конверсия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.brokersPerformance.map((broker) => (
+                                        <tr key={broker.id} className="border-b hover:bg-gray-50 transition">
+                                            <td className="py-3 font-medium">{broker.name}</td>
+                                            <td className="text-center py-3">{broker.totalProperties}</td>
+                                            <td className="text-center py-3">
+                                                <Badge variant="outline" className="bg-blue-50 text-blue-700">
+                                                    {broker.activeProperties}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-center py-3">{broker.completedDeals}</td>
+                                            <td className="text-center py-3">
+                                                <Badge variant="default" className="bg-green-500">
+                                                    {broker.soldDeals}
+                                                </Badge>
+                                            </td>
+                                            <td className="text-right py-3 font-medium text-green-600">
+                                                {broker.commissionForecast.toLocaleString('ru-RU')} ₸
+                                            </td>
+                                            <td className="text-center py-3">
+                                                <span className={broker.conversionRate >= 20 ? 'text-green-600 font-medium' : 'text-muted-foreground'}>
+                                                    {broker.conversionRate.toFixed(1)}%
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }

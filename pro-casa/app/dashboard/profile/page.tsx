@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "@/hooks/use-toast";
 import { API_URL } from "@/lib/config";
-import { User, Pencil, Lock, BookOpen, GraduationCap, Phone, Mail, MessageCircle, DollarSign, CreditCard, ChevronDown, Clock, CheckCircle2, Circle, Play, FileText, ListChecks, ExternalLink, Download, TrendingUp, Users, Target, BarChart3, Award } from "lucide-react";
+import { User, Pencil, Lock, BookOpen, GraduationCap, Phone, Mail, MessageCircle, DollarSign, CreditCard, ChevronDown, Clock, CheckCircle2, Circle, Play, FileText, ListChecks, ExternalLink, Download, TrendingUp, Users, Target, BarChart3, Award, Building } from "lucide-react";
 
 interface UserProfile {
   id: number;
@@ -73,14 +73,14 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  
+
   // Edit form state
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
     phone: "",
   });
-  
+
   // Password form state
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -120,7 +120,7 @@ export default function ProfilePage() {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem("token");
-      
+
       // Fetch deals, clients, bookings in parallel
       const [dealsRes, clientsRes, bookingsRes] = await Promise.all([
         fetch(`${API_URL}/deals?limit=100`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -225,7 +225,7 @@ export default function ProfilePage() {
         },
         body: JSON.stringify(editForm),
       });
-      
+
       if (res.ok) {
         toast({ title: "Профиль обновлен", description: "Ваши данные успешно сохранены" });
         setEditDialogOpen(false);
@@ -243,12 +243,12 @@ export default function ProfilePage() {
       toast({ title: "Ошибка", description: "Пароли не совпадают", variant: "destructive" });
       return;
     }
-    
+
     if (passwordForm.newPassword.length < 6) {
       toast({ title: "Ошибка", description: "Пароль должен содержать минимум 6 символов", variant: "destructive" });
       return;
     }
-    
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/auth/change-password`, {
@@ -262,7 +262,7 @@ export default function ProfilePage() {
           newPassword: passwordForm.newPassword,
         }),
       });
-      
+
       if (res.ok) {
         toast({ title: "Пароль изменен", description: "Ваш пароль успешно обновлен" });
         setPasswordDialogOpen(false);
@@ -287,14 +287,14 @@ export default function ProfilePage() {
         },
         body: JSON.stringify({ completed }),
       });
-      
+
       if (res.ok) {
-        setCourses(courses.map(c => 
+        setCourses(courses.map(c =>
           c.id === courseId ? { ...c, completed, completedAt: completed ? new Date().toISOString() : undefined } : c
         ));
-        toast({ 
-          title: completed ? "Курс завершен" : "Статус изменен", 
-          description: completed ? "Поздравляем с завершением курса!" : "Курс отмечен как незавершенный" 
+        toast({
+          title: completed ? "Курс завершен" : "Статус изменен",
+          description: completed ? "Поздравляем с завершением курса!" : "Курс отмечен как незавершенный"
         });
       } else {
         throw new Error("Failed to update course status");
@@ -415,7 +415,7 @@ export default function ProfilePage() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex gap-4 pt-4">
                 <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
                   <DialogTrigger asChild>
@@ -515,219 +515,183 @@ export default function ProfilePage() {
 
         {/* KPI / Статистика Tab */}
         <TabsContent value="stats" className="space-y-6">
-          {/* KPI Cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/10 border-blue-500/30">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-blue-600">
-                  <Target className="h-4 w-4" />
-                  Всего сделок
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-blue-600">{stats?.totalDeals || 0}</div>
-                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                  <span className="text-green-600">{stats?.closedDeals || 0} закрыто</span>
-                  <span>•</span>
-                  <span className="text-orange-600">{stats?.activeDeals || 0} активных</span>
-                </div>
-              </CardContent>
-            </Card>
+          {/* KPI Cards - Role Based */}
+          {profile?.role === 'DEVELOPER' ? (
+            // KPI для застройщика
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <Building className="h-4 w-4" />
+                    Проданные квартиры
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">{stats?.closedDeals || 0}</div>
+                  <p className="text-xs text-muted-foreground">за всё время</p>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-gradient-to-br from-green-500/10 to-emerald-600/10 border-green-500/30">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-green-600">
-                  <DollarSign className="h-4 w-4" />
-                  Комиссия
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">
-                  {(stats?.totalCommission || 0).toLocaleString('ru-RU')} ₸
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  За все время
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Сумма продаж
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">
+                    {(stats?.totalCommission || 0).toLocaleString('ru-RU')} ₸
+                  </div>
+                  <p className="text-xs text-muted-foreground">общая сумма</p>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/10 border-purple-500/30">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-purple-600">
-                  <Users className="h-4 w-4" />
-                  Клиенты
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{stats?.totalClients || 0}</div>
-                <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-                  <span className="text-green-600">{stats?.activeClients || 0} активных</span>
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Активные брони
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">{stats?.bookings || 0}</div>
+                  <p className="text-xs text-muted-foreground">ожидают оплаты</p>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-gradient-to-br from-amber-500/10 to-orange-600/10 border-amber-500/30">
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2 text-amber-600">
-                  <TrendingUp className="h-4 w-4" />
-                  Конверсия
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-amber-600">{stats?.conversionRate || 0}%</div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  Клиент → Сделка
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Конверсия
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">{stats?.conversionRate || 0}%</div>
+                  <p className="text-xs text-muted-foreground">бронь → сделка</p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            // KPI для брокера
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    Сделки
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">{stats?.totalDeals || 0}</div>
+                  <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                    <span>{stats?.closedDeals || 0} закрыто</span>
+                    <span>•</span>
+                    <span>{stats?.activeDeals || 0} активных</span>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Detailed Stats */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Activity Summary */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5" />
-                  Показатели работы
-                </CardTitle>
-                <CardDescription>Ваша активность за все время</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Закрытые сделки</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{stats?.closedDeals || 0}</span>
-                      <Badge variant="default" className="bg-green-500">
-                        <CheckCircle2 className="h-3 w-3 mr-1" />
-                        Успех
-                      </Badge>
-                    </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    Комиссия
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">
+                    {(stats?.totalCommission || 0).toLocaleString('ru-RU')} ₸
                   </div>
-                  <Progress value={stats?.totalDeals ? (stats.closedDeals / stats.totalDeals) * 100 : 0} className="h-2" />
-                </div>
+                  <p className="text-xs text-muted-foreground">за всё время</p>
+                </CardContent>
+              </Card>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Активные сделки</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold">{stats?.activeDeals || 0}</span>
-                      <Badge variant="secondary" className="bg-orange-500/20 text-orange-600">
-                        В работе
-                      </Badge>
-                    </div>
-                  </div>
-                  <Progress value={stats?.totalDeals ? (stats.activeDeals / stats.totalDeals) * 100 : 0} className="h-2 bg-orange-100 [&>div]:bg-orange-500" />
-                </div>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Клиенты
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">{stats?.totalClients || 0}</div>
+                  <p className="text-xs text-muted-foreground">{stats?.activeClients || 0} активных</p>
+                </CardContent>
+              </Card>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Брони квартир</span>
-                    <span className="font-bold">{stats?.bookings || 0}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">Активные клиенты</span>
-                    <span className="font-bold">{stats?.activeClients || 0} из {stats?.totalClients || 0}</span>
-                  </div>
-                  <Progress value={stats?.totalClients ? (stats.activeClients / stats.totalClients) * 100 : 0} className="h-2 bg-purple-100 [&>div]:bg-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Achievement Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Достижения
-                </CardTitle>
-                <CardDescription>Ваш прогресс и уровень</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Level Badge */}
-                <div className="text-center p-4 bg-gradient-to-br from-amber-500/20 to-orange-500/20 rounded-lg">
-                  <div className="text-4xl mb-2">
-                    {(stats?.closedDeals || 0) >= 50 ? '🏆' : 
-                     (stats?.closedDeals || 0) >= 20 ? '🥇' : 
-                     (stats?.closedDeals || 0) >= 10 ? '🥈' : 
-                     (stats?.closedDeals || 0) >= 5 ? '🥉' : '🌟'}
-                  </div>
-                  <div className="font-bold text-lg">
-                    {(stats?.closedDeals || 0) >= 50 ? 'Легенда' : 
-                     (stats?.closedDeals || 0) >= 20 ? 'Эксперт' : 
-                     (stats?.closedDeals || 0) >= 10 ? 'Профи' : 
-                     (stats?.closedDeals || 0) >= 5 ? 'Специалист' : 'Новичок'}
-                  </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {stats?.closedDeals || 0} закрытых сделок
-                  </p>
-                </div>
-
-                {/* Achievements List */}
-                <div className="space-y-2">
-                  <div className={`flex items-center gap-3 p-2 rounded-lg ${(stats?.closedDeals || 0) >= 1 ? 'bg-green-500/10' : 'bg-muted/50 opacity-50'}`}>
-                    <div className="text-xl">{(stats?.closedDeals || 0) >= 1 ? '✅' : '⬜'}</div>
-                    <div>
-                      <div className="font-medium">Первая сделка</div>
-                      <div className="text-xs text-muted-foreground">Закройте первую сделку</div>
-                    </div>
-                  </div>
-                  <div className={`flex items-center gap-3 p-2 rounded-lg ${(stats?.closedDeals || 0) >= 5 ? 'bg-green-500/10' : 'bg-muted/50 opacity-50'}`}>
-                    <div className="text-xl">{(stats?.closedDeals || 0) >= 5 ? '✅' : '⬜'}</div>
-                    <div>
-                      <div className="font-medium">Пять сделок</div>
-                      <div className="text-xs text-muted-foreground">Закройте 5 сделок</div>
-                    </div>
-                  </div>
-                  <div className={`flex items-center gap-3 p-2 rounded-lg ${(stats?.closedDeals || 0) >= 10 ? 'bg-green-500/10' : 'bg-muted/50 opacity-50'}`}>
-                    <div className="text-xl">{(stats?.closedDeals || 0) >= 10 ? '✅' : '⬜'}</div>
-                    <div>
-                      <div className="font-medium">Десяток</div>
-                      <div className="text-xs text-muted-foreground">Закройте 10 сделок</div>
-                    </div>
-                  </div>
-                  <div className={`flex items-center gap-3 p-2 rounded-lg ${(stats?.totalCommission || 0) >= 1000000 ? 'bg-green-500/10' : 'bg-muted/50 opacity-50'}`}>
-                    <div className="text-xl">{(stats?.totalCommission || 0) >= 1000000 ? '✅' : '⬜'}</div>
-                    <div>
-                      <div className="font-medium">Миллионер</div>
-                      <div className="text-xs text-muted-foreground">Заработайте 1 млн ₸ комиссии</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Monthly Activity Chart (simplified) */}
-          {stats?.monthlyDeals && stats.monthlyDeals.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Сделки по месяцам</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-end justify-between gap-2 h-32">
-                  {stats.monthlyDeals.map((item, idx) => {
-                    const maxCount = Math.max(...stats.monthlyDeals.map(m => m.count), 1);
-                    const heightPercent = (item.count / maxCount) * 100;
-                    return (
-                      <div key={idx} className="flex-1 flex flex-col items-center gap-1">
-                        <div 
-                          className="w-full bg-primary rounded-t transition-all"
-                          style={{ height: `${heightPercent}%`, minHeight: item.count > 0 ? '8px' : '2px' }}
-                        />
-                        <span className="text-xs text-muted-foreground">{item.month}</span>
-                        <span className="text-xs font-medium">{item.count}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardDescription className="flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Конверсия
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-semibold">{stats?.conversionRate || 0}%</div>
+                  <p className="text-xs text-muted-foreground">клиент → сделка</p>
+                </CardContent>
+              </Card>
+            </div>
           )}
+
+          {/* Детальная статистика */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Показатели</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Закрытые сделки</span>
+                    <span className="font-medium">{stats?.closedDeals || 0}</span>
+                  </div>
+                  <Progress value={stats?.totalDeals ? (stats.closedDeals / stats.totalDeals) * 100 : 0} className="h-1.5" />
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Активные сделки</span>
+                    <span className="font-medium">{stats?.activeDeals || 0}</span>
+                  </div>
+                  <Progress value={stats?.totalDeals ? (stats.activeDeals / stats.totalDeals) * 100 : 0} className="h-1.5" />
+                </div>
+
+                <div className="flex items-center justify-between text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">Активные клиенты</span>
+                  <span className="font-medium">{stats?.activeClients || 0} / {stats?.totalClients || 0}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Месячная активность */}
+            {stats?.monthlyDeals && stats.monthlyDeals.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Сделки по месяцам</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-end justify-between gap-2 h-24">
+                    {stats.monthlyDeals.map((item, idx) => {
+                      const maxCount = Math.max(...stats.monthlyDeals.map(m => m.count), 1);
+                      const heightPercent = (item.count / maxCount) * 100;
+                      return (
+                        <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                          <div
+                            className="w-full bg-primary/80 rounded-sm transition-all"
+                            style={{ height: `${heightPercent}%`, minHeight: item.count > 0 ? '4px' : '2px' }}
+                          />
+                          <span className="text-[10px] text-muted-foreground">{item.month}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         {/* Баланс Tab */}
@@ -917,9 +881,9 @@ export default function ProfilePage() {
                                   <Play className="h-4 w-4 text-red-500" />
                                   <span className="font-medium">Видеоурок</span>
                                 </div>
-                                <Button 
-                                  variant="outline" 
-                                  className="w-full" 
+                                <Button
+                                  variant="outline"
+                                  className="w-full"
                                   onClick={() => window.open(course.videoUrl, '_blank')}
                                 >
                                   <Play className="h-4 w-4 mr-2" />
@@ -940,11 +904,11 @@ export default function ProfilePage() {
                                   {course.materials.map((material, idx) => {
                                     const fileName = material.split('/').pop() || `Документ ${idx + 1}`
                                     return (
-                                      <Button 
+                                      <Button
                                         key={idx}
-                                        variant="outline" 
+                                        variant="outline"
                                         size="sm"
-                                        className="w-full justify-between" 
+                                        className="w-full justify-between"
                                         onClick={() => window.open(material, '_blank')}
                                       >
                                         <span className="flex items-center">

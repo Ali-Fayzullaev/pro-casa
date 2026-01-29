@@ -100,6 +100,36 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
     // AI Strategy State
     const [isAiAnalyzing, setIsAiAnalyzing] = useState(false);
 
+    // Delete mutations
+    const deleteSellerMutation = useMutation({
+        mutationFn: async (sellerId: string) => {
+            await api.delete(`/sellers/${sellerId}`);
+        },
+        onSuccess: () => {
+            toast.success("Продавец удалён");
+            queryClient.invalidateQueries({ queryKey: ["sellers"] });
+        },
+        onError: (error: any) => {
+            const msg = error.response?.data?.error || error.message || "Ошибка удаления";
+            toast.error(msg);
+        }
+    });
+
+    const deletePropertyMutation = useMutation({
+        mutationFn: async (propertyId: string) => {
+            await api.delete(`/crm-properties/${propertyId}`);
+        },
+        onSuccess: () => {
+            toast.success("Объект архивирован");
+            queryClient.invalidateQueries({ queryKey: ["sellers"] });
+            queryClient.invalidateQueries({ queryKey: ["properties"] });
+        },
+        onError: (error: any) => {
+            const msg = error.response?.data?.error || error.message || "Ошибка удаления";
+            toast.error(msg);
+        }
+    });
+
     const handleAddProperty = (sellerId: string) => {
         setSelectedSellerId(sellerId);
         setIsPropertyFormOpen(true);
@@ -499,9 +529,13 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty }: 
                                                     seller={item as Seller}
                                                     onAddProperty={onAddProperty}
                                                     onInterviewClick={() => handleEditSeller(item as Seller)}
+                                                    onDelete={(id) => deleteSellerMutation.mutate(id)}
                                                 />
                                             ) : (
-                                                <PropertyCard property={item as CrmProperty} />
+                                                <PropertyCard
+                                                    property={item as CrmProperty}
+                                                    onDelete={(id: string) => deletePropertyMutation.mutate(id)}
+                                                />
                                             )}
                                         </div>
                                     ))}

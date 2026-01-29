@@ -15,8 +15,10 @@ import {
 } from "@/types/kanban";
 import { toast } from "sonner";
 import { MonthFilter } from "./MonthFilter";
+import { BrokerFilter } from "./BrokerFilter";
+import { FormLinksButton } from "./FormLinksButton";
 import { isSameMonth, parseISO } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api-client";
 
@@ -40,6 +42,22 @@ export function KanbanBoard() {
     const [activeTab, setActiveTab] = useState<"sellers" | "properties">("sellers");
     const [isSellerFormOpen, setIsSellerFormOpen] = useState(false);
     const [monthFilter, setMonthFilter] = useState<Date | undefined>(undefined);
+    const [brokerFilter, setBrokerFilter] = useState<string | undefined>(undefined);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string>("");
+
+    useEffect(() => {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+            try {
+                const user = JSON.parse(userStr);
+                setUserRole(user.role);
+                setUserId(user.id);
+            } catch (e) {
+                console.error("Failed to parse user", e);
+            }
+        }
+    }, []);
 
     // Property creation state
     const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
@@ -55,9 +73,11 @@ export function KanbanBoard() {
 
     // --- SELLERS DATA ---
     const { data: sellersData, isLoading: isLoadingSellers } = useQuery({
-        queryKey: ["sellers"],
+        queryKey: ["sellers", brokerFilter],
         queryFn: async () => {
-            const res = await api.get("/sellers");
+            const res = await api.get("/sellers", {
+                params: { brokerId: brokerFilter }
+            });
             return res.data;
         },
         enabled: activeTab === "sellers",
@@ -85,9 +105,11 @@ export function KanbanBoard() {
 
     // --- PROPERTIES DATA ---
     const { data: propertiesData, isLoading: isLoadingProperties } = useQuery({
-        queryKey: ["properties"],
+        queryKey: ["properties", brokerFilter],
         queryFn: async () => {
-            const res = await api.get("/crm-properties");
+            const res = await api.get("/crm-properties", {
+                params: { brokerId: brokerFilter }
+            });
             return res.data;
         },
         enabled: activeTab === "properties",
@@ -197,6 +219,16 @@ export function KanbanBoard() {
                 </Tabs>
 
                 <div className="flex gap-2 items-center">
+                    {userRole === "ADMIN" && (
+                        <BrokerFilter
+                            value={brokerFilter}
+                            onChange={setBrokerFilter}
+                            className="w-[180px]"
+                        />
+                    )}
+                    {userRole === "BROKER" && userId && (
+                        <FormLinksButton userId={userId} />
+                    )}
                     <MonthFilter date={monthFilter} setDate={setMonthFilter} />
 
                     {/* Filter Button Removed as per request (not functional yet) */}

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticate } from '../middleware/auth.middleware';
+import { PropertyFunnelStage, PropertyStatus } from '@prisma/client';
 
 export const analyticsRouter = Router();
 
@@ -12,17 +13,46 @@ analyticsRouter.get('/dashboard', async (req: Request, res: Response) => {
         const userId = req.user!.userId;
         const role = req.user!.role;
 
+        // DEVELOPER DASHBOARD LOGIC
+        if (role === 'DEVELOPER') {
+            const [projectsCount, apartmentsCount, bookingsCount] = await Promise.all([
+                prisma.project.count({ where: { developerId: userId } }),
+                prisma.apartment.count({ where: { project: { developerId: userId } } }),
+                prisma.booking.count({ where: { apartment: { project: { developerId: userId } } } })
+            ]);
+
+            res.json({
+                kpi: {
+                    activeDeals: projectsCount, // Using activeDeals field for Projects count
+                    commissionForecast: apartmentsCount, // Using commissionForecast for Apartments count
+                    hotLeads: bookingsCount, // Using hotLeads for Bookings
+                    conversionRate: 0
+                },
+                charts: {
+                    funnel: [
+                        { name: 'Проекты', stage: 'leads', value: projectsCount },
+                        { name: 'Квартиры', stage: 'shows', value: apartmentsCount },
+                        { name: 'Брони', stage: 'deal', value: bookingsCount }
+                    ],
+                    dynamics: []
+                },
+                activity: [],
+                actionItems: []
+            });
+            return;
+        }
+
         // Base filter for privacy
         const whereUser: any = role === 'BROKER' ? { brokerId: userId } : {};
         const whereUserBuyer: any = role === 'BROKER' ? { brokerId: userId } : {}; // Assuming Buyer/Seller also have brokerId
 
         // 1. KPI Data
         const activePropertiesCount = await prisma.crmProperty.count({
-            where: { status: 'ACTIVE', ...whereUser }
+            where: { status: PropertyStatus.ACTIVE, ...whereUser }
         });
 
         const activeProperties = await prisma.crmProperty.findMany({
-            where: { status: 'ACTIVE', ...whereUser },
+            where: { status: PropertyStatus.ACTIVE, ...whereUser },
             select: { price: true }
         });
 
@@ -37,7 +67,7 @@ analyticsRouter.get('/dashboard', async (req: Request, res: Response) => {
 
         // Conversion: (Deals / Total Created) * 100
         const totalProperties = await prisma.crmProperty.count({ where: whereUser });
-        const dealProperties = await prisma.crmProperty.count({ where: { funnelStage: 'DEAL', ...whereUser } });
+        const dealProperties = await prisma.crmProperty.count({ where: { funnelStage: PropertyFunnelStage.DEAL, ...whereUser } });
         const conversionRate = totalProperties > 0 ? (dealProperties / totalProperties) * 100 : 0;
 
         // 2. Chart Data: Funnel
@@ -49,12 +79,12 @@ analyticsRouter.get('/dashboard', async (req: Request, res: Response) => {
 
         // Format for Recharts
         const funnelChart = [
-            { name: 'Создан', stage: 'CREATED', value: 0 },
-            { name: 'Подготовка', stage: 'PREPARATION', value: 0 },
-            { name: 'Лиды', stage: 'LEADS', value: 0 },
-            { name: 'Показы', stage: 'SHOWS', value: 0 },
-            { name: 'Сделка', stage: 'DEAL', value: 0 },
-            { name: 'Продано', stage: 'SOLD', value: 0 },
+            { name: 'Создан', stage: PropertyFunnelStage.CREATED, value: 0 },
+            { name: 'Подготовка', stage: PropertyFunnelStage.PREPARATION, value: 0 },
+            { name: 'Лиды', stage: PropertyFunnelStage.LEADS, value: 0 },
+            { name: 'Показы', stage: PropertyFunnelStage.SHOWS, value: 0 },
+            { name: 'Сделка', stage: PropertyFunnelStage.DEAL, value: 0 },
+            { name: 'Продано', stage: PropertyFunnelStage.SOLD, value: 0 },
         ].map(step => {
             const found = funnelRaw.find(f => f.funnelStage === step.stage);
             return {
@@ -87,7 +117,7 @@ analyticsRouter.get('/dashboard', async (req: Request, res: Response) => {
                     { liquidityScore: { lt: 40 } },
                     { activeStrategy: 'LOW_LIQUIDITY' }
                 ],
-                status: 'ACTIVE'
+                status: PropertyStatus.ACTIVE
             },
             take: 5,
             select: { id: true, residentialComplex: true, activeStrategy: true, liquidityScore: true }
@@ -98,8 +128,8 @@ analyticsRouter.get('/dashboard', async (req: Request, res: Response) => {
             where: {
                 ...whereUser,
                 OR: [
-                    { status: 'SOLD' },
-                    { funnelStage: 'SOLD' }
+                    { status: PropertyStatus.SOLD },
+                    { funnelStage: PropertyFunnelStage.SOLD }
                 ]
             },
             orderBy: { updatedAt: 'desc' },
@@ -171,13 +201,13 @@ analyticsRouter.get('/dashboard', async (req: Request, res: Response) => {
             // Calculate stats for each broker (can be optimized with complex groupBy, but map is robust for now)
             brokersPerformance = await Promise.all(brokers.map(async b => {
                 const pCount = await prisma.crmProperty.count({ where: { brokerId: b.id } });
-                const active = await prisma.crmProperty.count({ where: { brokerId: b.id, status: 'ACTIVE' } });
-                const deals = await prisma.crmProperty.count({ where: { brokerId: b.id, OR: [{ funnelStage: 'DEAL' }, { funnelStage: 'SOLD' }] } });
-                const sold = await prisma.crmProperty.count({ where: { brokerId: b.id, OR: [{ status: 'SOLD' }, { funnelStage: 'SOLD' }] } });
+                const active = await prisma.crmProperty.count({ where: { brokerId: b.id, status: PropertyStatus.ACTIVE } });
+                const deals = await prisma.crmProperty.count({ where: { brokerId: b.id, OR: [{ funnelStage: PropertyFunnelStage.DEAL }, { funnelStage: PropertyFunnelStage.SOLD }] } });
+                const sold = await prisma.crmProperty.count({ where: { brokerId: b.id, OR: [{ status: PropertyStatus.SOLD }, { funnelStage: PropertyFunnelStage.SOLD }] } });
 
                 // Sum commission
                 const props = await prisma.crmProperty.findMany({
-                    where: { brokerId: b.id, status: 'ACTIVE' },
+                    where: { brokerId: b.id, status: PropertyStatus.ACTIVE },
                     select: { price: true }
                 });
                 const potentialComm = props.reduce((acc, curr) => acc + (Number(curr.price) * 0.02), 0);

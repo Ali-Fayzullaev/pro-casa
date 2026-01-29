@@ -29,6 +29,7 @@ sellersRouter.get('/', async (req: Request, res: Response): Promise<void> => {
             funnelStage,
             search,
             isActive,
+            brokerId,
             page = '1',
             limit = '20',
         } = req.query;
@@ -39,9 +40,12 @@ sellersRouter.get('/', async (req: Request, res: Response): Promise<void> => {
 
         const where: any = {};
 
-        // Фильтр по брокеру (брокеры видят только своих продавцов)
+        // Role-based filtering
         if (req.user?.role === 'BROKER') {
             where.brokerId = req.user.userId;
+        } else if (brokerId) {
+            // Admin can filter by specific broker
+            where.brokerId = brokerId as string;
         }
 
         // Фильтр по этапу воронки
@@ -52,6 +56,8 @@ sellersRouter.get('/', async (req: Request, res: Response): Promise<void> => {
         // Фильтр по активности
         if (isActive !== undefined) {
             where.isActive = isActive === 'true';
+        } else {
+            where.isActive = true; // По умолчанию только активные
         }
 
         // Поиск по имени/телефону
@@ -78,6 +84,7 @@ sellersRouter.get('/', async (req: Request, res: Response): Promise<void> => {
                         },
                     },
                     properties: {
+                        where: { status: { not: 'ARCHIVED' } },
                         select: {
                             id: true,
                             residentialComplex: true,
@@ -104,7 +111,11 @@ sellersRouter.get('/', async (req: Request, res: Response): Promise<void> => {
                         },
                     },
                     _count: {
-                        select: { properties: true },
+                        select: {
+                            properties: {
+                                where: { status: { not: 'ARCHIVED' } }
+                            }
+                        },
                     },
                 },
             }),
@@ -162,6 +173,39 @@ sellersRouter.get('/funnel-stats', async (req: Request, res: Response): Promise<
 });
 
 // =========================================
+// GET /api/sellers/archived - Получение архивных продавцов
+// =========================================
+sellersRouter.get(
+    '/archived',
+    requireRole('BROKER', 'ADMIN'),
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const userId = req.user!.userId;
+            const role = req.user!.role;
+
+            const where = {
+                isActive: false,
+                ...(role === 'BROKER' ? { brokerId: userId } : {})
+            };
+
+            const sellers = await prisma.seller.findMany({
+                where,
+                include: {
+                    broker: { select: { id: true, firstName: true, lastName: true } },
+                    properties: true
+                },
+                orderBy: { updatedAt: 'desc' }
+            });
+
+            res.json(sellers);
+        } catch (error) {
+            console.error('Get archived sellers error:', error);
+            res.status(500).json({ error: 'Ошибка получения архива' });
+        }
+    }
+);
+
+// =========================================
 // GET /api/sellers/:id - Детали продавца
 // =========================================
 sellersRouter.get('/:id', async (req: Request, res: Response): Promise<void> => {
@@ -181,6 +225,7 @@ sellersRouter.get('/:id', async (req: Request, res: Response): Promise<void> => 
                     },
                 },
                 properties: {
+                    where: { status: { not: 'ARCHIVED' } },
                     include: {
                         calculationLogs: {
                             orderBy: { createdAt: 'desc' },
@@ -455,14 +500,16 @@ sellersRouter.put(
 );
 
 // =========================================
-// DELETE /api/sellers/:id - Удаление продавца
+// DELETE /api/sellers/:id - Архивация продавца (soft delete)
 // =========================================
 sellersRouter.delete(
     '/:id',
-    requireRole('ADMIN'),
+    requireRole('BROKER', 'ADMIN'),
     async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
+            const userId = req.user!.userId;
+            const role = req.user!.role;
 
             const existing = await prisma.seller.findUnique({
                 where: { id },
@@ -474,21 +521,122 @@ sellersRouter.delete(
                 return;
             }
 
-            // Нельзя удалять если есть активные объекты
-            if (existing.properties.length > 0) {
-                res.status(400).json({
-                    error: 'Нельзя удалить продавца с привязанными объектами',
-                    propertiesCount: existing.properties.length,
-                });
+            // BROKER может архивировать только своих продавцов
+            if (role === 'BROKER' && existing.brokerId !== userId) {
+                res.status(403).json({ error: 'Нет прав на архивацию этого продавца' });
                 return;
             }
 
-            await prisma.seller.delete({ where: { id } });
+            // Архивируем продавца и все его объекты
+            await prisma.$transaction(async (tx) => {
+                // Архивируем все объекты продавца
+                await tx.crmProperty.updateMany({
+                    where: { sellerId: id },
+                    data: { status: 'ARCHIVED' }
+                });
 
-            res.json({ success: true, message: 'Продавец удалён' });
+                // Архивируем продавца
+                await tx.seller.update({
+                    where: { id },
+                    data: { isActive: false }
+                });
+            });
+
+            res.json({ success: true, message: 'Продавец и его объекты архивированы' });
         } catch (error) {
-            console.error('Delete seller error:', error);
-            res.status(500).json({ error: 'Ошибка удаления продавца' });
+            console.error('Archive seller error:', error);
+            res.status(500).json({ error: 'Ошибка архивации продавца' });
+        }
+    }
+);
+
+
+// =========================================
+// POST /api/sellers/:id/restore - Восстановление из архива
+// =========================================
+sellersRouter.post(
+    '/:id/restore',
+    requireRole('BROKER', 'ADMIN'),
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { id } = req.params;
+            const userId = req.user!.userId;
+            const role = req.user!.role;
+
+            const existing = await prisma.seller.findUnique({ where: { id } });
+
+            if (!existing) {
+                res.status(404).json({ error: 'Продавец не найден' });
+                return;
+            }
+
+            if (role === 'BROKER' && existing.brokerId !== userId) {
+                res.status(403).json({ error: 'Нет прав на восстановление этого продавца' });
+                return;
+            }
+
+            // Восстанавливаем продавца и его объекты
+            await prisma.$transaction(async (tx) => {
+                await tx.crmProperty.updateMany({
+                    where: { sellerId: id, status: 'ARCHIVED' },
+                    data: { status: 'ACTIVE' }
+                });
+
+                await tx.seller.update({
+                    where: { id },
+                    data: { isActive: true }
+                });
+            });
+
+            res.json({ success: true, message: 'Продавец восстановлен из архива' });
+        } catch (error) {
+            console.error('Restore seller error:', error);
+            res.status(500).json({ error: 'Ошибка восстановления' });
+        }
+    }
+);
+
+// =========================================
+// DELETE /api/sellers/:id/permanent - Полное удаление (ADMIN only)
+// =========================================
+// =========================================
+// DELETE /api/sellers/:id/permanent - Полное удаление
+// =========================================
+sellersRouter.delete(
+    '/:id/permanent',
+    requireRole('BROKER', 'ADMIN'), // Allow Broker
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { id } = req.params;
+            const userId = req.user!.userId;
+            const role = req.user!.role;
+
+            const existing = await prisma.seller.findUnique({
+                where: { id },
+                include: { properties: true }
+            });
+
+            if (!existing) {
+                res.status(404).json({ error: 'Продавец не найден' });
+                return;
+            }
+
+            // Broker can only delete own sellers
+            if (role === 'BROKER' && existing.brokerId !== userId) {
+                res.status(403).json({ error: 'Нет прав на удаление этого продавца' });
+                return;
+            }
+
+            // Удаляем все связанные объекты и продавца
+            await prisma.$transaction(async (tx) => {
+                await tx.crmProperty.deleteMany({ where: { sellerId: id } });
+                await tx.seller.delete({ where: { id } });
+            });
+
+            res.json({ success: true, message: 'Продавец полностью удалён' });
+        } catch (error) {
+            console.error('Permanent delete seller error:', error);
+            res.status(500).json({ error: 'Ошибка удаления' });
         }
     }
 );

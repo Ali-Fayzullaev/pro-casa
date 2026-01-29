@@ -1,13 +1,16 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Building2, TrendingUp, HandCoins } from "lucide-react";
+import { AlertCircle, Building2, TrendingUp, HandCoins, MoreVertical, Trash2 } from "lucide-react";
 import { CrmProperty, PropertyClass, StrategyType } from "@/types/kanban";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface PropertyCardProps {
     property: CrmProperty;
+    onDelete?: (id: string) => void;
 }
 
 // Neutral gray-based class colors for minimalist design
@@ -33,12 +36,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { SummaryDialog } from "./dialogs/SummaryDialog";
 import { StrategyLoader } from "@/components/ui/StrategyLoader";
 
-export function PropertyCardBase({ property, style, setNodeRef, attributes, listeners, isDragging, isOverlay, isSold }: { property: CrmProperty; style?: any; setNodeRef?: any; attributes?: any; listeners?: any; isDragging?: boolean; isOverlay?: boolean; isSold?: boolean }) {
+export function PropertyCardBase({ property, style, setNodeRef, attributes, listeners, isDragging, isOverlay, isSold, onDelete }: { property: CrmProperty; style?: any; setNodeRef?: any; attributes?: any; listeners?: any; isDragging?: boolean; isOverlay?: boolean; isSold?: boolean; onDelete?: (id: string) => void }) {
     const queryClient = useQueryClient();
     const [isGenerating, setIsGenerating] = useState(false);
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [imgError, setImgError] = useState(false);
     const [user, setUser] = useState<any>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     // Load user
     useState(() => {
@@ -126,6 +130,35 @@ export function PropertyCardBase({ property, style, setNodeRef, attributes, list
                                     {StrategyTypeLabels[property.activeStrategy] || property.activeStrategy}
                                 </Badge>
                             </div>
+                        )}
+
+                        {/* Actions Menu - show for owner or admin */}
+                        {(user?.role === 'ADMIN' || user?.id === property.broker?.id) && onDelete && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" onPointerDown={(e: any) => e.stopPropagation()}>
+                                    <DropdownMenuItem
+                                        className="text-destructive focus:text-destructive"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteDialogOpen(true);
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Архивировать
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         )}
                     </div>
 
@@ -247,11 +280,37 @@ export function PropertyCardBase({ property, style, setNodeRef, attributes, list
                 data={property}
                 type="Property"
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Архивировать объект?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Объект «{property.residentialComplex}» будет перемещён в архив.
+                            Это действие можно отменить.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete?.(property.id);
+                                setDeleteDialogOpen(false);
+                            }}
+                        >
+                            Архивировать
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ property, onDelete }: PropertyCardProps) {
     // Disable dragging for SOLD properties (check both funnelStage and status)
     const isSold = property.funnelStage === 'SOLD' || property.status === 'SOLD';
 
@@ -283,6 +342,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
             listeners={isSold ? {} : listeners}
             isDragging={isDragging}
             isSold={isSold}
+            onDelete={onDelete}
         />
     );
 }

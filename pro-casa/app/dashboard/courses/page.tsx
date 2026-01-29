@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/hooks/use-toast";
 import { API_URL } from "@/lib/config";
 import { GraduationCap, Plus, Pencil, Trash2, Users, UserPlus } from "lucide-react";
+import { FileUpload } from "@/components/file-upload";
 
 interface Course {
   id: string;
@@ -23,6 +24,8 @@ interface Course {
   order: number;
   isActive: boolean;
   createdAt: string;
+  videoUrl: string | null;
+  materials: string[];
 }
 
 interface Broker {
@@ -38,7 +41,7 @@ export default function CoursesAdminPage() {
   const [brokers, setBrokers] = useState<Broker[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<string>("");
-  
+
   // Create/Edit course dialog
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -48,8 +51,10 @@ export default function CoursesAdminPage() {
     content: "",
     duration: 60,
     order: 0,
+    videoUrl: "",
+    materials: [] as string[],
   });
-  
+
   // Assign course dialog
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [selectedCourseForAssign, setSelectedCourseForAssign] = useState<string>("");
@@ -107,7 +112,7 @@ export default function CoursesAdminPage() {
       toast({ title: "Ошибка", description: "Введите название курса", variant: "destructive" });
       return;
     }
-    
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses`, {
@@ -118,7 +123,7 @@ export default function CoursesAdminPage() {
         },
         body: JSON.stringify(courseForm),
       });
-      
+
       if (res.ok) {
         toast({ title: "Успешно", description: "Курс создан" });
         setCourseDialogOpen(false);
@@ -134,7 +139,7 @@ export default function CoursesAdminPage() {
 
   const handleUpdateCourse = async () => {
     if (!editingCourse || !courseForm.title) return;
-    
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/${editingCourse.id}`, {
@@ -145,7 +150,7 @@ export default function CoursesAdminPage() {
         },
         body: JSON.stringify(courseForm),
       });
-      
+
       if (res.ok) {
         toast({ title: "Успешно", description: "Курс обновлен" });
         setCourseDialogOpen(false);
@@ -162,7 +167,7 @@ export default function CoursesAdminPage() {
 
   const handleDeleteCourse = async (courseId: string) => {
     if (!confirm("Удалить курс?")) return;
-    
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/${courseId}`, {
@@ -173,7 +178,7 @@ export default function CoursesAdminPage() {
         },
         body: JSON.stringify({ isActive: false }),
       });
-      
+
       if (res.ok) {
         toast({ title: "Успешно", description: "Курс деактивирован" });
         fetchCourses();
@@ -188,7 +193,7 @@ export default function CoursesAdminPage() {
       toast({ title: "Ошибка", description: "Выберите курс и брокера", variant: "destructive" });
       return;
     }
-    
+
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/assign`, {
@@ -202,7 +207,7 @@ export default function CoursesAdminPage() {
           brokerId: selectedBrokerId,
         }),
       });
-      
+
       if (res.ok) {
         toast({ title: "Успешно", description: "Курс назначен брокеру" });
         setAssignDialogOpen(false);
@@ -225,6 +230,8 @@ export default function CoursesAdminPage() {
       content: course.content,
       duration: course.duration,
       order: course.order,
+      videoUrl: course.videoUrl || "",
+      materials: course.materials || [],
     });
     setCourseDialogOpen(true);
   };
@@ -236,6 +243,8 @@ export default function CoursesAdminPage() {
       content: "",
       duration: 60,
       order: 0,
+      videoUrl: "",
+      materials: [],
     });
     setEditingCourse(null);
   };
@@ -308,7 +317,7 @@ export default function CoursesAdminPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Dialog open={courseDialogOpen} onOpenChange={(open) => {
             setCourseDialogOpen(open);
             if (!open) resetCourseForm();
@@ -352,6 +361,32 @@ export default function CoursesAdminPage() {
                     placeholder="Подробное содержание, материалы, ссылки..."
                     rows={5}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ссылка на видео урок</Label>
+                  <Input
+                    value={courseForm.videoUrl || ""}
+                    onChange={(e) => setCourseForm({ ...courseForm, videoUrl: e.target.value })}
+                    placeholder="https://youtube.com/..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Материалы курса (Файлы)</Label>
+                  <div className="border rounded-lg p-4 bg-gray-50/50">
+                    <FileUpload
+                      key={editingCourse?.id || 'new'} // Force re-mount on course change
+                      category="all"
+                      multiple={true}
+                      existingFiles={courseForm.materials}
+                      onUpload={(files) => {
+                        const newUrls = files.map(f => f.url);
+                        setCourseForm(prev => ({ ...prev, materials: [...prev.materials, ...newUrls] }));
+                      }}
+                      onRemove={(url) => {
+                        setCourseForm(prev => ({ ...prev, materials: prev.materials.filter(m => m !== url) }));
+                      }}
+                    />
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

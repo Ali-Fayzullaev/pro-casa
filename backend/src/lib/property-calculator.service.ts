@@ -75,6 +75,7 @@ export interface StrategyInput {
     readyForExclusive: boolean;
     trustLevel: number;
     readyToFollowRecommendations?: string | null; // YES, PARTIAL, NO
+    plansToPurchase?: boolean; // NEW: флаг, что продавец планирует покупку после продажи
   };
   property: {
     calculatedClass: PropertyClass;
@@ -652,7 +653,7 @@ export function calculateStrategy(input: StrategyInput): StrategyType {
   // PRIORITY 8: SALE_TO_PURCHASE (S3) — ПРОДАЖА → ПОКУПКА
   // =========================================
 
-  if (seller.reason === 'SIZE_CHANGE' || seller.reason === 'RELOCATION') {
+  if (seller.plansToPurchase || seller.reason === 'SIZE_CHANGE' || seller.reason === 'RELOCATION') {
     return 'SALE_TO_PURCHASE';
   }
 

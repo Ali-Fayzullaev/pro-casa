@@ -2,15 +2,18 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Phone, Star, FileText, Plus } from "lucide-react";
+import { Phone, Star, FileText, Plus, MoreVertical, Trash2 } from "lucide-react";
 import { Seller } from "@/types/kanban";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface SellerCardProps {
     seller: Seller;
     onInterviewClick?: (id: string) => void;
     onAddProperty?: (id: string) => void;
+    onDelete?: (id: string) => void;
 }
 
 import { defaultAnimateLayoutChanges } from "@dnd-kit/sortable";
@@ -20,10 +23,11 @@ import { Eye } from "lucide-react";
 import { SummaryDialog } from "./dialogs/SummaryDialog";
 import { DeadlineLabels, FunnelStageLabels, StrategyTypeLabels } from "@/lib/translations";
 
-export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style, setNodeRef, attributes, listeners, isDragging, isOverlay }: any) {
+export function SellerCardBase({ seller, onInterviewClick, onAddProperty, onDelete, style, setNodeRef, attributes, listeners, isDragging, isOverlay }: any) {
     const [summaryOpen, setSummaryOpen] = useState(false);
     const [initialPropertyId, setInitialPropertyId] = useState<string | null>(null);
     const [user, setUser] = useState<any>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     // Load user for role check
     useState(() => {
@@ -63,14 +67,44 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                             </div>
                         </div>
                     </div>
-                    <div className="flex items-center gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                            <Star
-                                key={i}
-                                className={`h-3 w-3 ${i < seller.trustLevel ? trustLevelColor : "text-gray-200"
-                                    } fill-current`}
-                            />
-                        ))}
+                    <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                                <Star
+                                    key={i}
+                                    className={`h-3 w-3 ${i < seller.trustLevel ? trustLevelColor : "text-gray-200"
+                                        } fill-current`}
+                                />
+                            ))}
+                        </div>
+                        {/* Actions Menu - show for owner or admin */}
+                        {(user?.role === 'ADMIN' || user?.id === seller.brokerId) && onDelete && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onPointerDown={(e) => e.stopPropagation()}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <MoreVertical className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" onPointerDown={(e: any) => e.stopPropagation()}>
+                                    <DropdownMenuItem
+                                        className="text-orange-600 focus:text-orange-600"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteDialogOpen(true);
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        Архивировать
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
                 </CardHeader>
                 <CardContent className="p-4 pt-2">
@@ -96,8 +130,8 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                                     <div
                                         key={p.id}
                                         className={`flex flex-col text-[10px] p-1.5 rounded border cursor-pointer transition-colors ${isSold
-                                                ? 'bg-green-50 border-green-200 hover:bg-green-100'
-                                                : 'bg-gray-50 hover:bg-gray-100'
+                                            ? 'bg-green-50 border-green-200 hover:bg-green-100'
+                                            : 'bg-gray-50 hover:bg-gray-100'
                                             }`}
                                         onClick={(e) => {
                                             e.stopPropagation();
@@ -244,6 +278,36 @@ export function SellerCardBase({ seller, onInterviewClick, onAddProperty, style,
                 type="Seller"
                 initialActivePropertyId={initialPropertyId}
             />
+
+            {/* Archive Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Архивировать продавца?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Продавец {seller.firstName} {seller.lastName} будет перемещён в архив.
+                            {seller.properties && seller.properties.length > 0 && (
+                                <span className="block mt-2 text-orange-600 font-medium">
+                                    У продавца есть {seller.properties.length} объект(ов). Они тоже будут архивированы.
+                                </span>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-orange-500 text-white hover:bg-orange-600"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete?.(seller.id);
+                                setDeleteDialogOpen(false);
+                            }}
+                        >
+                            Архивировать
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     )
 }

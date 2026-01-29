@@ -24,6 +24,7 @@ import {
   Scale,
   Settings,
   Target,
+  Archive,
 } from "lucide-react"
 import {
   Sidebar,
@@ -127,6 +128,13 @@ const menuItems: MenuSection[] = [
     url: "/dashboard/forms",
     roles: ["ADMIN", "BROKER"],
   },
+  // 7. Архив
+  {
+    title: "Архив",
+    icon: Archive,
+    url: "/dashboard/archives",
+    roles: ["ADMIN", "BROKER"],
+  },
 ]
 
 // Admin-only menu item
@@ -206,15 +214,12 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-border/50 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Home className="h-5 w-5" />
-            </div>
+            <img src="/1.png" alt="Casa Pro" className="h-10 w-10 rounded-lg object-contain" />
             <div>
-              <h2 className="text-sm font-semibold tracking-tight">PRO.casa.kz</h2>
-              <p className="text-xs text-muted-foreground">v1.2</p>
+              <h2 className="text-sm font-semibold tracking-tight">Casa Pro</h2>
             </div>
           </div>
-          <NotificationBell />
+          {user.role !== "ADMIN" && <NotificationBell />}
         </div>
       </SidebarHeader>
       <SidebarContent>

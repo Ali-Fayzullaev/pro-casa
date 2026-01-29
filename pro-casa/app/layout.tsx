@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PRO.casa.kz - CRM для недвижимости",
+  title: "Casa Pro - CRM для недвижимости",
   description: "Управление клиентами, проектами и продажами недвижимости",
+  icons: {
+    icon: "/2.png",
+  },
 };
 
 export default function RootLayout({

@@ -110,6 +110,7 @@ async function runPropertyCalculation(
             readyForExclusive: sellerData?.readyForExclusive || false,
             trustLevel: sellerData?.trustLevel || 3,
             readyToFollowRecommendations: sellerData?.readyToFollowRecommendations || null,
+            plansToPurchase: sellerData?.plansToPurchase || false, // NEW: для стратегии S3
         },
         property: {
             calculatedClass,
@@ -190,7 +191,9 @@ crmPropertiesRouter.get('/', async (req: Request, res: Response): Promise<void> 
             activeStrategy,
             district,
             sellerId,
+            brokerId,
             search,
+            status,
             page = '1',
             limit = '20',
         } = req.query;
@@ -201,9 +204,12 @@ crmPropertiesRouter.get('/', async (req: Request, res: Response): Promise<void> 
 
         const where: any = {};
 
-        // Фильтр по брокеру
+        // Role-based filtering
         if (req.user?.role === 'BROKER') {
             where.brokerId = req.user.userId;
+        } else if (brokerId) {
+            // Admin can filter by broker
+            where.brokerId = brokerId as string;
         }
 
         if (funnelStage) where.funnelStage = funnelStage;
@@ -212,6 +218,13 @@ crmPropertiesRouter.get('/', async (req: Request, res: Response): Promise<void> 
         if (activeStrategy) where.activeStrategy = activeStrategy;
         if (district) where.district = district;
         if (sellerId) where.sellerId = sellerId;
+
+        // Фильтр по статусу (по умолчанию исключаем архивные)
+        if (status) {
+            where.status = status;
+        } else {
+            where.status = { not: 'ARCHIVED' };
+        }
 
         if (search) {
             where.OR = [
@@ -348,6 +361,39 @@ crmPropertiesRouter.get('/analytics', async (req: Request, res: Response): Promi
         res.status(500).json({ error: 'Ошибка получения аналитики' });
     }
 });
+
+// =========================================
+// GET /api/crm-properties/archived - Получение архивных объектов
+// =========================================
+crmPropertiesRouter.get(
+    '/archived',
+    requireRole('BROKER', 'ADMIN'),
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const userId = req.user!.userId;
+            const role = req.user!.role;
+
+            const where: any = {
+                status: 'ARCHIVED',
+                ...(role === 'BROKER' ? { brokerId: userId } : {})
+            };
+
+            const properties = await prisma.crmProperty.findMany({
+                where,
+                include: {
+                    broker: { select: { id: true, firstName: true, lastName: true } },
+                    seller: { select: { id: true, firstName: true, lastName: true } }
+                },
+                orderBy: { updatedAt: 'desc' }
+            });
+
+            res.json(properties);
+        } catch (error) {
+            console.error('Get archived properties error:', error);
+            res.status(500).json({ error: 'Ошибка получения архива' });
+        }
+    }
+);
 
 // =========================================
 // GET /api/crm-properties/:id - Детали объекта
@@ -1006,10 +1052,12 @@ crmPropertiesRouter.post(
 // =========================================
 crmPropertiesRouter.delete(
     '/:id',
-    requireRole('ADMIN'),
+    requireRole('BROKER', 'ADMIN'),
     async (req: Request, res: Response): Promise<void> => {
         try {
             const { id } = req.params;
+            const userId = req.user!.userId;
+            const role = req.user!.role;
 
             const existing = await prisma.crmProperty.findUnique({ where: { id } });
 
@@ -1018,7 +1066,13 @@ crmPropertiesRouter.delete(
                 return;
             }
 
-            // Soft delete - just archive
+            // BROKER может удалять только свои объекты
+            if (role === 'BROKER' && existing.brokerId !== userId) {
+                res.status(403).json({ error: 'Нет прав на удаление этого объекта' });
+                return;
+            }
+
+            // Soft delete - just archive (для BROKER и ADMIN по умолчанию)
             if (req.query.hard !== 'true') {
                 await prisma.crmProperty.update({
                     where: { id },
@@ -1028,12 +1082,52 @@ crmPropertiesRouter.delete(
                 return;
             }
 
-            // Hard delete (admin only with ?hard=true)
+            // Hard delete (with ?hard=true)
+            // Permission check already done above (Broker checks ownership)
+
             await prisma.crmProperty.delete({ where: { id } });
-            res.json({ success: true, message: 'Объект удалён' });
+            res.json({ success: true, message: 'Объект удалён навсегда' });
         } catch (error) {
             console.error('Delete CRM property error:', error);
             res.status(500).json({ error: 'Ошибка удаления объекта' });
+        }
+    }
+);
+
+
+// =========================================
+// POST /api/crm-properties/:id/restore - Восстановление объекта из архива
+// =========================================
+crmPropertiesRouter.post(
+    '/:id/restore',
+    requireRole('BROKER', 'ADMIN'),
+    async (req: Request, res: Response): Promise<void> => {
+        try {
+            const { id } = req.params;
+            const userId = req.user!.userId;
+            const role = req.user!.role;
+
+            const existing = await prisma.crmProperty.findUnique({ where: { id } });
+
+            if (!existing) {
+                res.status(404).json({ error: 'Объект не найден' });
+                return;
+            }
+
+            if (role === 'BROKER' && existing.brokerId !== userId) {
+                res.status(403).json({ error: 'Нет прав на восстановление этого объекта' });
+                return;
+            }
+
+            await prisma.crmProperty.update({
+                where: { id },
+                data: { status: 'ACTIVE' }
+            });
+
+            res.json({ success: true, message: 'Объект восстановлен из архива' });
+        } catch (error) {
+            console.error('Restore property error:', error);
+            res.status(500).json({ error: 'Ошибка восстановления' });
         }
     }
 );
