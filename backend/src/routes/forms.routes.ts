@@ -110,3 +110,51 @@ formsRouter.put('/:id', authenticate, async (req: Request, res: Response): Promi
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+// PATCH /api/forms/:id/toggle - Toggle form active status
+formsRouter.patch('/:id/toggle', authenticate, async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (req.user?.role !== 'ADMIN') {
+            res.status(403).json({ error: 'Access denied' });
+            return;
+        }
+
+        const form = await prisma.leadForm.findUnique({ where: { id: req.params.id } });
+        if (!form) {
+            res.status(404).json({ error: 'Form not found' });
+            return;
+        }
+
+        const updated = await prisma.leadForm.update({
+            where: { id: req.params.id },
+            data: { isActive: !form.isActive }
+        });
+
+        res.json(updated);
+    } catch (error) {
+        console.error('Toggle form error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// DELETE /api/forms/:id - Delete form
+formsRouter.delete('/:id', authenticate, async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (req.user?.role !== 'ADMIN') {
+            res.status(403).json({ error: 'Access denied' });
+            return;
+        }
+
+        const form = await prisma.leadForm.findUnique({ where: { id: req.params.id } });
+        if (!form) {
+            res.status(404).json({ error: 'Form not found' });
+            return;
+        }
+
+        await prisma.leadForm.delete({ where: { id: req.params.id } });
+        res.json({ success: true, message: 'Form deleted' });
+    } catch (error) {
+        console.error('Delete form error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});

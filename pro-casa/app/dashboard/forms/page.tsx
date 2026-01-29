@@ -3,12 +3,22 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Plus, Copy, ExternalLink, Link as LinkIcon } from "lucide-react";
+import { Plus, Copy, ExternalLink, Link as LinkIcon, Power, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { getApiUrl, getAuthHeaders } from "@/lib/api-config";
 import { BrokerLinksDialog } from "@/components/crm/forms/BrokerLinksDialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 interface LeadForm {
     id: string;
@@ -26,17 +36,16 @@ export default function FormsListPage() {
     const [userId, setUserId] = useState<string>('');
     const [selectedForm, setSelectedForm] = useState<LeadForm | null>(null);
     const [linksDialogOpen, setLinksDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [formToDelete, setFormToDelete] = useState<LeadForm | null>(null);
 
     useEffect(() => {
-        // Get user info
         const userStr = localStorage.getItem('user');
         if (userStr) {
             const u = JSON.parse(userStr);
             setUserRole(u.role);
-            // User object has 'id' field, not 'userId' (userId is only in JWT token)
             const id = u.id;
             setUserId(id);
-            console.log('User ID extracted:', id, 'Full user:', u); // Debug log
         }
         fetchForms();
     }, []);
@@ -57,8 +66,38 @@ export default function FormsListPage() {
         }
     };
 
-    // Filter for brokers: only show MANUAL (personal) forms they're assigned to
-    // ROUND_ROBIN (automatic) forms are completely hidden from brokers
+    const handleToggle = async (form: LeadForm) => {
+        try {
+            const res = await fetch(getApiUrl(`/forms/${form.id}/toggle`), {
+                method: 'PATCH',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to toggle');
+            const updated = await res.json();
+            setForms(prev => prev.map(f => f.id === form.id ? { ...f, isActive: updated.isActive } : f));
+            toast.success(updated.isActive ? "Форма активирована" : "Форма деактивирована");
+        } catch (error) {
+            toast.error("Ошибка изменения статуса");
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!formToDelete) return;
+        try {
+            const res = await fetch(getApiUrl(`/forms/${formToDelete.id}`), {
+                method: 'DELETE',
+                headers: getAuthHeaders()
+            });
+            if (!res.ok) throw new Error('Failed to delete');
+            setForms(prev => prev.filter(f => f.id !== formToDelete.id));
+            toast.success("Форма удалена");
+            setDeleteDialogOpen(false);
+            setFormToDelete(null);
+        } catch (error) {
+            toast.error("Ошибка удаления формы");
+        }
+    };
+
     const visibleForms = userRole === 'BROKER'
         ? forms.filter(f => f.distributionType === 'MANUAL' && f.brokers.some(b => b.id === userId))
         : forms;
@@ -67,12 +106,8 @@ export default function FormsListPage() {
         let url = `${window.location.origin}/forms/${id}`;
         if (brokerId) {
             url += `?brokerId=${brokerId}`;
-            console.log('Copying personal link with brokerId:', brokerId); // Debug log
         }
-
         navigator.clipboard.writeText(url);
-
-        // Show appropriate toast message
         if (brokerId) {
             toast.success("Персональная ссылка скопирована", {
                 description: "Заявки с этой ссылки будут закреплены за вами"
@@ -99,12 +134,12 @@ export default function FormsListPage() {
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {visibleForms.map((form) => (
-                    <Card key={form.id}>
+                    <Card key={form.id} className={!form.isActive ? "opacity-60" : ""}>
                         <CardHeader className="pb-3">
                             <div className="flex justify-between items-start">
                                 <CardTitle className="text-lg font-bold">{form.title}</CardTitle>
                                 <Badge variant={form.isActive ? "default" : "secondary"}>
-                                    {form.isActive ? "Активна" : "Архив"}
+                                    {form.isActive ? "Активна" : "Выключена"}
                                 </Badge>
                             </div>
                             <CardDescription>
@@ -158,21 +193,34 @@ export default function FormsListPage() {
                                     </>
                                 )}
 
-                                {/* Statistics Link (Admin only) */}
+                                {/* Admin Controls: Toggle & Delete */}
                                 {userRole === 'ADMIN' && (
-                                    <Link href={`/dashboard/forms/${form.id}/stats`} className="w-full">
-                                        <Button variant="outline" size="sm" className="w-full justify-start mt-2">
-                                            <svg className="mr-2 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                            </svg>
-                                            Статистика
+                                    <div className="flex gap-2 pt-2 border-t mt-2">
+                                        <Button
+                                            variant={form.isActive ? "outline" : "default"}
+                                            size="sm"
+                                            className="flex-1"
+                                            onClick={() => handleToggle(form)}
+                                        >
+                                            <Power className="mr-2 h-3 w-3" />
+                                            {form.isActive ? "Выключить" : "Включить"}
                                         </Button>
-                                    </Link>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => {
+                                                setFormToDelete(form);
+                                                setDeleteDialogOpen(true);
+                                            }}
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
                                 )}
 
-                                {/* Broker Count (moved participants to edit page) */}
+                                {/* Broker Count */}
                                 {userRole === 'ADMIN' && form.brokers.length > 0 && (
-                                    <div className="text-xs text-muted-foreground pt-2 border-t">
+                                    <div className="text-xs text-muted-foreground pt-2">
                                         {form.brokers.length} {form.brokers.length === 1 ? 'участник' : 'участников'}
                                     </div>
                                 )}
@@ -193,6 +241,29 @@ export default function FormsListPage() {
                 onOpenChange={setLinksDialogOpen}
                 form={selectedForm}
             />
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить форму?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Вы собираетесь удалить форму <strong>"{formToDelete?.title}"</strong>.
+                            Это действие необратимо.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            onClick={handleDelete}
+                        >
+                            Удалить
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
+
