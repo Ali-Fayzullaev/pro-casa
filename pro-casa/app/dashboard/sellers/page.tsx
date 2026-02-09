@@ -42,7 +42,7 @@ export default function SellersPage() {
                     if (!v) setSelectedSellerData(null);
                 }}
                 activeFunnelId={activeFunnelId}
-                initialData={selectedSellerData || undefined}
+                initialData={selectedSellerData as any}
             />
         </div>
     );
