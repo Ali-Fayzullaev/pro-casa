@@ -57,6 +57,14 @@ export function KanbanBoard() {
     const [userRole, setUserRole] = useState<string | null>(null);
     const [userId, setUserId] = useState<string>("");
 
+    // Edit Seller State
+    const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
+
+    const handleEditSeller = (seller: Seller) => {
+        setSelectedSeller(seller);
+        setIsSellerFormOpen(true);
+    };
+
     // Hybrid CRM State
     const [crmMode, setCrmMode] = useState<CRMMode>("STANDARD");
     const [activeFunnelId, setActiveFunnelId] = useState<string | null>(null);
@@ -255,12 +263,16 @@ export function KanbanBoard() {
             {/* Seller Creation Form */}
             <CreateSellerForm
                 open={isSellerFormOpen}
-                onOpenChange={setIsSellerFormOpen}
+                onOpenChange={(v) => {
+                    setIsSellerFormOpen(v);
+                    if (!v) setSelectedSeller(null);
+                }}
                 onSuccess={() => {
                     queryClient.invalidateQueries({ queryKey: ["sellers"] });
                     setIsSellerFormOpen(false);
                 }}
                 activeFunnelId={activeFunnelId}
+                initialData={selectedSeller as any}
             />
             <CreatePropertyForm
                 open={isPropertyFormOpen}
@@ -384,6 +396,11 @@ export function KanbanBoard() {
                         {(activeTab === "sellers" || isCustom) ? (
                             isLoadingSellers ? (
                                 <div className="flex items-center justify-center h-full text-muted-foreground">Загрузка продавцов...</div>
+                            ) : viewMode === "list" ? (
+                                <SellersListView
+                                    onEdit={handleEditSeller}
+                                    activeFunnelId={activeFunnelId}
+                                />
                             ) : (
                                 <DndBoard
                                     type="sellers"
@@ -400,6 +417,13 @@ export function KanbanBoard() {
                         ) : (
                             isLoadingProperties ? (
                                 <div className="flex items-center justify-center h-full text-muted-foreground">Загрузка объектов...</div>
+                            ) : viewMode === "list" ? (
+                                <PropertiesListView
+                                    onEdit={(prop) => {
+                                        // Handle property edit if needed
+                                        console.log("Edit property", prop);
+                                    }}
+                                />
                             ) : (
                                 <DndBoard
                                     type="properties"
