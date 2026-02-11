@@ -38,6 +38,7 @@ export const validate = (config: ValidationConfig | ZodSchema) => {
                     code: err.code,
                 }));
 
+                console.error('Validation error:', JSON.stringify(formattedErrors, null, 2)); // DEBUG LOG
                 res.status(400).json({
                     error: 'Ошибка валидации',
                     details: formattedErrors,
