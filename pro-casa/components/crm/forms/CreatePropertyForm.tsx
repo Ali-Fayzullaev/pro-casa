@@ -862,16 +862,16 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                         type="submit"
                         form="create-property-form"
                         className="bg-indigo-600 hover:bg-indigo-700 min-w-[200px]"
-                        disabled={mutation.isPending || isThinking}
+                        disabled={createMutation.isPending || updateMutation.isPending || isThinking}
                     >
-                        {mutation.isPending || isThinking ? (
+                        {createMutation.isPending || updateMutation.isPending || isThinking ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Анализ...
+                                {initialData ? "Сохранение..." : "Анализ..."}
                             </>
-                        ) : createdPropertyId ? (
+                        ) : effectivePropertyId ? (
                             <>
-                                Сохранено
+                                {initialData ? "Сохранить изменения" : "Сохранено"}
                                 <CheckCircle2 className="ml-2 h-4 w-4" />
                             </>
                         ) : (
