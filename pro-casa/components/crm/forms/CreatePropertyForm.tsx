@@ -55,29 +55,19 @@ import { StrategyLoader } from "@/components/ui/StrategyLoader";
 interface CreatePropertyFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    sellerId: string;
+    sellerId?: string; // Made optional for edit mode
+    initialData?: CreatePropertyValues & { id: string }; // Add initialData
 }
 
-const PROPERTY_TYPES = [
-    { value: "BRICK", label: "Кирпичный" },
-    { value: "MONOLITH", label: "Монолитный" },
-    { value: "PANEL", label: "Панельный" },
-    { value: "BLOCK", label: "Блочный" },
-    { value: "MONOLITH_BRICK", label: "Монолит-Кирпич" },
-];
+// ... (keep constants)
 
-const REPAIR_STATES = [
-    { value: "NONE", label: "Черновая / Без ремонта" },
-    { value: "COSMETIC", label: "Косметический" },
-    { value: "EURO", label: "Евроремонт" },
-    { value: "DESIGNER", label: "Дизайнерский" },
-    { value: "CAPITAL", label: "Требует ремонта" },
-];
-
-export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePropertyFormProps) {
+export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }: CreatePropertyFormProps) {
     const queryClient = useQueryClient();
     const [createdPropertyId, setCreatedPropertyId] = useState<string | null>(null);
     const [activeSections, setActiveSections] = useState<string[]>(["basic", "building", "repair", "pledge", "options", "media", "docs"]);
+
+    // Determine effective property ID (edited or newly created)
+    const effectivePropertyId = initialData?.id || createdPropertyId;
 
     // Reset state when opening/closing
     useEffect(() => {
@@ -105,7 +95,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
             // 2. Building
             buildingType: "MONOLITH",
             ceilingHeight: 2.7,
-            bathroomType: "SOVMESTNYI", // Placeholder, will fix
+            bathroomType: "SOVMESTNYI",
 
             // 3. Repair
             repairState: "COSMETIC",
@@ -127,7 +117,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
 
             // 7. Docs
             documentsVerified: false,
-            sellerId: sellerId,
+            sellerId: sellerId || "",
         },
     });
 
@@ -137,16 +127,24 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
     // AI Animation State
     const [isThinking, setIsThinking] = useState(false);
 
-    // Reset when closed
+    // Reset or Populate when opened
     useEffect(() => {
         if (!open) {
             form.reset();
             return;
         }
-        if (sellerId) {
-            form.setValue("sellerId", sellerId);
+
+        if (initialData) {
+            // Populate form with existing data
+            form.reset(initialData);
+        } else if (sellerId) {
+            // Prepare for new creation
+            form.reset({
+                ...form.getValues(), // keep defaults
+                sellerId: sellerId,
+            });
         }
-    }, [open, sellerId, form]);
+    }, [open, sellerId, initialData, form]);
 
     // Calculate progress (Approximate) derived
     const filled = [
@@ -161,25 +159,21 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
 
     const progress = Math.min(Math.round((filled / 10) * 100), 100);
 
-    const mutation = useMutation({
+    const createMutation = useMutation({
         mutationFn: async (data: CreatePropertyValues) => {
             return api.post("/crm-properties", data);
         },
         onSuccess: (data: any) => {
             toast.success("Объект успешно создан! Теперь можно загрузить фото и документы.");
             queryClient.invalidateQueries({ queryKey: ["properties"] });
-            // Don't close immediately, allow uploads
             if (data?.id) {
                 setCreatedPropertyId(data.id);
-                // Auto-focus on Media and Docs, collapse others to reduce noise
                 setActiveSections(["media", "docs"]);
-                // Scroll to media section
                 setTimeout(() => {
                     const mediaSection = document.getElementById("accordion-item-media");
                     mediaSection?.scrollIntoView({ behavior: "smooth", block: "center" });
                 }, 100);
             } else {
-                // Fallback if no ID returned (shouldn't happen)
                 onOpenChange(false);
                 form.reset();
             }
@@ -190,14 +184,35 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
         },
     });
 
+    const updateMutation = useMutation({
+        mutationFn: async (data: CreatePropertyValues) => {
+            if (!initialData?.id) throw new Error("No ID for update");
+            return api.put(`/crm-properties/${initialData.id}`, data);
+        },
+        onSuccess: () => {
+            toast.success("Объект успешно обновлен!");
+            queryClient.invalidateQueries({ queryKey: ["properties"] });
+            onOpenChange(false);
+        },
+        onError: (error: any) => {
+            console.error(error);
+            toast.error(error.response?.data?.message || "Ошибка обновления объекта");
+        },
+    });
+
     const onSubmit = async (data: CreatePropertyValues) => {
         if (!data.sellerId && sellerId) data.sellerId = sellerId;
 
         setIsThinking(true);
         try {
-            // Artificial delay for "Magic" (3s)
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            await mutation.mutateAsync(data);
+            // Artificial delay for "Magic" (1s) to show spinner
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            if (initialData?.id) {
+                await updateMutation.mutateAsync(data);
+            } else {
+                await createMutation.mutateAsync(data);
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -713,8 +728,8 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                         {/* Image Uploader */}
                                         <div className="space-y-2">
                                             <FormLabel className="text-base font-semibold">Фотографии объекта</FormLabel>
-                                            {createdPropertyId ? (
-                                                <ImageUploader propertyId={createdPropertyId} />
+                                            {effectivePropertyId ? (
+                                                <ImageUploader propertyId={effectivePropertyId} />
                                             ) : (
                                                 <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground bg-gray-50">
                                                     <p className="text-sm">Загрузка фото станет доступна после создания объекта</p>
@@ -785,8 +800,8 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId }: CreatePrope
                                     </AccordionTrigger>
                                     <AccordionContent className="pt-2 pb-6 space-y-4">
                                         <div className="space-y-4">
-                                            {createdPropertyId ? (
-                                                <FileUploader propertyId={createdPropertyId} />
+                                            {effectivePropertyId ? (
+                                                <FileUploader propertyId={effectivePropertyId} />
                                             ) : (
                                                 <div className="rounded-lg border border-dashed p-6 text-center text-muted-foreground bg-gray-50">
                                                     <p className="text-sm">Загрузка документов будет доступна после создания объекта</p>

@@ -92,6 +92,8 @@ export function KanbanBoard() {
     // Property creation state
     const [isPropertyFormOpen, setIsPropertyFormOpen] = useState(false);
     const [selectedSellerId, setSelectedSellerId] = useState<string>("");
+    // Edit Property State
+    const [selectedProperty, setSelectedProperty] = useState<CrmProperty | null>(null);
 
     // Deal Closing State
     const [isCloseDealOpen, setIsCloseDealOpen] = useState(false);
@@ -276,8 +278,12 @@ export function KanbanBoard() {
             />
             <CreatePropertyForm
                 open={isPropertyFormOpen}
-                onOpenChange={setIsPropertyFormOpen}
+                onOpenChange={(v) => {
+                    setIsPropertyFormOpen(v);
+                    if (!v) setSelectedProperty(null);
+                }}
                 sellerId={selectedSellerId}
+                initialData={selectedProperty as any}
             />
             {propertyConfigToClose && (
                 <CloseDealDialog
@@ -420,8 +426,8 @@ export function KanbanBoard() {
                             ) : viewMode === "list" ? (
                                 <PropertiesListView
                                     onEdit={(prop) => {
-                                        // Handle property edit if needed
-                                        console.log("Edit property", prop);
+                                        setSelectedProperty(prop);
+                                        setIsPropertyFormOpen(true);
                                     }}
                                     activeFunnelId={activeFunnelId}
                                 />
@@ -433,6 +439,10 @@ export function KanbanBoard() {
                                     items={propertiesGrouped}
                                     onDragEnd={handlePropertyDragEnd}
                                     isCustom={isCustom}
+                                    onEditProperty={(prop: CrmProperty) => {
+                                        setSelectedProperty(prop);
+                                        setIsPropertyFormOpen(true);
+                                    }}
                                 />
                             )
                         )}
