@@ -59,7 +59,21 @@ interface CreatePropertyFormProps {
     initialData?: CreatePropertyValues & { id: string }; // Add initialData
 }
 
-// ... (keep constants)
+const PROPERTY_TYPES = [
+    { value: "BRICK", label: "Кирпичный" },
+    { value: "MONOLITH", label: "Монолитный" },
+    { value: "PANEL", label: "Панельный" },
+    { value: "BLOCK", label: "Блочный" },
+    { value: "MONOLITH_BRICK", label: "Монолит-Кирпич" },
+];
+
+const REPAIR_STATES = [
+    { value: "NONE", label: "Черновая / Без ремонта" },
+    { value: "COSMETIC", label: "Косметический" },
+    { value: "EURO", label: "Евроремонт" },
+    { value: "DESIGNER", label: "Дизайнерский" },
+    { value: "CAPITAL", label: "Требует ремонта" },
+];
 
 export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }: CreatePropertyFormProps) {
     const queryClient = useQueryClient();
