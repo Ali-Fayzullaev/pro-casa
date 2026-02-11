@@ -34,7 +34,7 @@ export function PropertiesListView({ onEdit, activeFunnelId }: PropertiesListVie
         queryFn: async () => {
             // Reusing the kanban endpoint but we might want a dedicated list endpoint later
             // For now, filtering client-side is fine for MVP
-            const res = await api.get("/crm/properties");
+            const res = await api.get("/crm-properties");
             return res.data as CrmProperty[];
         },
     });
