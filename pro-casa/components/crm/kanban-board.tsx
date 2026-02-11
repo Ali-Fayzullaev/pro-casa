@@ -423,6 +423,7 @@ export function KanbanBoard() {
                                         // Handle property edit if needed
                                         console.log("Edit property", prop);
                                     }}
+                                    activeFunnelId={activeFunnelId}
                                 />
                             ) : (
                                 <DndBoard
