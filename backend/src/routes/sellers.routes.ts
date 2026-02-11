@@ -330,7 +330,7 @@ sellersRouter.post(
 
             // Role-based custom funnel assignment
             let customStageId = data.customStageId;
-            if (!customStageId && ['REALTOR', 'AGENCY', 'DEVELOPER'].includes(req.user?.role || '')) {
+            if (!customStageId && ['BROKER', 'REALTOR', 'AGENCY', 'DEVELOPER'].includes(req.user?.role || '')) {
                 // Priority: 1. funnelId from request, 2. Active funnel
                 const funnelWhere = data.funnelId
                     ? { id: data.funnelId, userId: req.user!.userId }
