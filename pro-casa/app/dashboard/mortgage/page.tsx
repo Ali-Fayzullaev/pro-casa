@@ -92,100 +92,29 @@ interface MortgageProgram {
   maxAmount?: number
 }
 
-// Static mortgage programs data (later can be fetched from API)
-const mortgagePrograms: MortgageProgram[] = [
-  {
-    id: "1",
-    name: "7-20-25",
-    bank: "Отбасы банк",
-    rate: 7,
-    minDownPayment: 20,
-    maxTerm: 25,
-    type: "Государственная",
-    housingTypes: ["Новостройка"],
-    description: "Государственная программа для покупки первичного жилья",
-    requirements: ["Гражданство РК", "Возраст 21-63", "Официальный доход"],
-    maxAmount: 65000000,
-  },
-  {
-    id: "2",
-    name: "Баспана Хит",
-    bank: "Отбасы банк",
-    rate: 5,
-    minDownPayment: 10,
-    maxTerm: 25,
-    type: "Государственная",
-    housingTypes: ["Новостройка", "Вторичное"],
-    description: "Доступное жилье для накопивших на первоначальный взнос",
-    requirements: ["Депозит в ЖССБ", "Возраст 18-65", "Гражданство РК"],
-    maxAmount: 100000000,
-  },
-  {
-    id: "3",
-    name: "Отау",
-    bank: "Отбасы банк",
-    rate: 2,
-    minDownPayment: 10,
-    maxTerm: 20,
-    type: "Государственная",
-    housingTypes: ["Новостройка", "Вторичное"],
-    description: "Для молодых семей до 35 лет",
-    requirements: ["Возраст до 35", "Молодая семья", "Гражданство РК"],
-    maxAmount: 50000000,
-  },
-  {
-    id: "4",
-    name: "Стандартная ипотека",
-    bank: "Kaspi Bank",
-    rate: 17.9,
-    minDownPayment: 20,
-    maxTerm: 20,
-    type: "Коммерческая",
-    housingTypes: ["Новостройка", "Вторичное"],
-    description: "Коммерческая ипотека на любое жилье",
-    requirements: ["Возраст 21-63", "Стабильный доход", "Хорошая кредитная история"],
-    maxAmount: 200000000,
-  },
-  {
-    id: "5",
-    name: "Стандартная ипотека",
-    bank: "Halyk Bank",
-    rate: 18.5,
-    minDownPayment: 20,
-    maxTerm: 25,
-    type: "Коммерческая",
-    housingTypes: ["Новостройка", "Вторичное"],
-    description: "Классическая ипотека от крупнейшего банка",
-    requirements: ["Возраст 21-65", "Официальный доход"],
-    maxAmount: 300000000,
-  },
-  {
-    id: "6",
-    name: "ForteIpoteka",
-    bank: "Forte Bank",
-    rate: 16,
-    minDownPayment: 15,
-    maxTerm: 20,
-    type: "Коммерческая",
-    housingTypes: ["Новостройка", "Вторичное"],
-    description: "Ипотека с минимальным первоначальным взносом",
-    requirements: ["Возраст 21-60", "Стаж работы от 6 мес"],
-    maxAmount: 150000000,
-  },
-  {
-    id: "7",
-    name: "Военная ипотека",
-    bank: "БЦК",
-    rate: 4,
-    minDownPayment: 0,
-    maxTerm: 25,
-    type: "Государственная",
-    housingTypes: ["Новостройка", "Вторичное"],
-    description: "Для военнослужащих с использованием субсидий",
-    requirements: ["Статус военнослужащего", "Стаж службы от 3 лет"],
-    maxAmount: 80000000,
-  },
-]
+// Маппинг данных из API в формат фронтенда
+function mapApiProgram(p: any): MortgageProgram {
+  const housingMap = {
+    'NEW_BUILDING': ['Новостройка'],
+    'SECONDARY': ['Вторичное'],
+    'ALL': ['Новостройка', 'Вторичное'],
+  };
+  let reqs: string[] = [];
+  try { reqs = JSON.parse(p.requirements); } catch { reqs = p.requirements ? p.requirements.split('\n').filter(Boolean) : []; }
+  return {
+    id: p.id,
+    name: p.programName,
+    bank: p.bankName,
+    rate: Number(p.interestRate),
+    minDownPayment: Number(p.minDownPayment),
+    maxTerm: p.maxTerm >= 12 ? Math.round(p.maxTerm / 12) : p.maxTerm,
+    type: Number(p.interestRate) <= 10 ? 'Государственная' : 'Коммерческая',
+    housingTypes: housingMap[p.propertyType] || ['Новостройка', 'Вторичное'],
+    description: p.programName + ' — ' + p.bankName,
+    requirements: reqs,
+    maxAmount: p.maxAmount ? Number(p.maxAmount) : undefined,
+  };
+}
 
 export default function MortgagePage() {
   // Filter states
@@ -201,6 +130,8 @@ export default function MortgagePage() {
   const [selectedRate, setSelectedRate] = useState(7)
   
   // Compare states
+  const [mortgagePrograms, setMortgagePrograms] = useState<MortgageProgram[]>([])
+  const [programsLoading, setProgramsLoading] = useState(true)
   const [compareList, setCompareList] = useState<string[]>([])
   
   // Save to client states
@@ -217,7 +148,20 @@ export default function MortgagePage() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token")
-        
+
+        // Загружаем ипотечные программы из БД
+        try {
+          const progRes = await fetch(`${API_URL}/mortgage-programs`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+          if (progRes.ok) {
+            const progData = await progRes.json()
+            const mapped = (Array.isArray(progData) ? progData : []).filter(p => p.isActive !== false).map(mapApiProgram)
+            if (mapped.length > 0) setMortgagePrograms(mapped)
+          }
+        } catch (e) { console.error("Failed to fetch mortgage programs:", e) }
+        setProgramsLoading(false)
+
         // Fetch clients
         const clientsResponse = await fetch(`${API_URL}/clients?limit=100`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -321,7 +265,7 @@ export default function MortgagePage() {
           !program.bank.toLowerCase().includes(searchQuery.toLowerCase())) return false
       return true
     })
-  }, [bankFilter, typeFilter, housingFilter, searchQuery])
+  }, [bankFilter, typeFilter, housingFilter, searchQuery, mortgagePrograms])
 
   // Calculator logic
   const calculateMortgage = () => {

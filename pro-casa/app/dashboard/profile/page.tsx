@@ -14,6 +14,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { toast } from "@/hooks/use-toast";
 import { API_URL } from "@/lib/config";
 import { User, Pencil, Lock, BookOpen, GraduationCap, Phone, Mail, MessageCircle, DollarSign, CreditCard, ChevronDown, Clock, CheckCircle2, Circle, Play, FileText, ListChecks, ExternalLink, Download, TrendingUp, Users, Target, BarChart3, Award, Building } from "lucide-react";
+import DOMPurify from "dompurify";
 
 interface UserProfile {
   id: number;
@@ -958,7 +959,7 @@ export default function ProfilePage() {
                                   <span className="font-medium">Содержание урока</span>
                                 </div>
                                 <div className="prose prose-sm dark:prose-invert max-w-none">
-                                  <div dangerouslySetInnerHTML={{ __html: course.content.replace(/\n/g, '<br/>') }} />
+                                  <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(course.content.replace(/\n/g, '<br/>')) }} />
                                 </div>
                               </div>
                             )}
