@@ -35,6 +35,7 @@ import { customFieldsRouter } from './routes/custom-fields.routes';
 import { agencyRouter } from './routes/agency.routes';
 import { eventsRouter } from './routes/events.routes';
 import { exportRouter } from './routes/export.routes';
+import { importRouter } from './routes/import.routes';
 import { subscriptionsRouter } from './routes/subscriptions.routes';
 import { mortgageApplicationsRouter } from './routes/mortgage-applications.routes';
 import { errorHandler } from './middleware/error.middleware';
@@ -56,7 +57,9 @@ app.use(cors({
   origin: allowedOrigins,
   credentials: true,
 }));
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -90,6 +93,7 @@ const authLimiter = rateLimit({
   message: { error: 'Слишком много попыток входа. Попробуйте через 15 минут.' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
 });
 
 app.use('/api/auth/login', authLimiter);
@@ -125,6 +129,7 @@ app.use('/api/custom-fields', customFieldsRouter);
 app.use('/api/agency', agencyRouter);
 app.use('/api/events', eventsRouter);
 app.use('/api/export', exportRouter);
+app.use('/api/import', importRouter);
 app.use('/api/subscriptions', subscriptionsRouter);
 app.use('/api/mortgage-applications', mortgageApplicationsRouter);
 

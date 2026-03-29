@@ -26,6 +26,7 @@ import {
   Target,
   LayoutList, // NEW
   Archive,
+  Upload,
 } from "lucide-react"
 import {
   Sidebar,
@@ -180,6 +181,7 @@ const adminMenuItem: MenuSection = {
     { title: "Курсы", url: "/dashboard/courses", icon: GraduationCap },
     { title: "Все проекты", url: "/dashboard/admin/projects", icon: Building2 },
     { title: "Настройки AI", url: "/dashboard/admin/settings", icon: Settings },
+    { title: "Импорт amoCRM", url: "/dashboard/admin/import", icon: Upload },
   ],
 }
 
