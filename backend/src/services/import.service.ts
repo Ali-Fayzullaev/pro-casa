@@ -194,6 +194,20 @@ export function validateRow(
   return { valid: errors.length === 0, errors, warnings };
 }
 
+// ── Helper: build client notes with unmapped data ──
+
+function buildClientNotes(baseNotes: string, row: Record<string, string>, unmappedColumns: string[]): string | undefined {
+  const parts: string[] = [];
+  if (baseNotes) parts.push(baseNotes);
+
+  for (const col of unmappedColumns) {
+    const val = (row[col] ?? '').trim();
+    if (val) parts.push(`${col}: ${val}`);
+  }
+
+  return parts.length > 0 ? parts.join(' | ') : undefined;
+}
+
 // ── executeImport ──
 
 export async function executeImport(params: ExecuteImportParams): Promise<ImportResult> {
@@ -214,6 +228,34 @@ export async function executeImport(params: ExecuteImportParams): Promise<Import
     const col = fieldToCol[field];
     return col ? (row[col] ?? '').trim() : '';
   };
+
+  // Find unmapped columns (columns not in columnMapping)
+  const allColumns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  const mappedColumns = new Set(Object.keys(columnMapping));
+  const unmappedColumns = allColumns.filter((col) => !mappedColumns.has(col) && col.trim() !== '');
+
+  // Auto-create custom fields for unmapped columns
+  const customFieldMap: Record<string, string> = {}; // column name → customField ID
+  if (unmappedColumns.length > 0 && targetModel === 'seller') {
+    for (const colName of unmappedColumns) {
+      // Check if custom field with this name already exists for this user
+      let field = await prisma.customField.findFirst({
+        where: { name: colName, userId: brokerId, entityType: 'SELLER' },
+      });
+      if (!field) {
+        field = await prisma.customField.create({
+          data: {
+            name: colName,
+            type: 'TEXT',
+            entityType: 'SELLER',
+            userId: brokerId,
+            isActive: true,
+          },
+        });
+      }
+      customFieldMap[colName] = field.id;
+    }
+  }
 
   // Load existing phones for duplicate detection
   const existingPhones = new Set<string>();
@@ -294,6 +336,16 @@ export async function executeImport(params: ExecuteImportParams): Promise<Import
           },
         });
 
+        // Save unmapped columns as custom field values
+        for (const [colName, fieldId] of Object.entries(customFieldMap)) {
+          const val = (row[colName] ?? '').trim();
+          if (val) {
+            await prisma.customFieldValue.create({
+              data: { fieldId, sellerId: record.id, value: val },
+            });
+          }
+        }
+
         existingPhones.add(phone);
         details.push({ rowNumber, status: 'created', recordId: record.id });
         created++;
@@ -321,7 +373,7 @@ export async function executeImport(params: ExecuteImportParams): Promise<Import
             clientType: 'BUYER' as any,
             status: mappedStatus as any,
             budget: budget && !isNaN(budget) ? budget : undefined,
-            notes: getValue(row, 'notes') || undefined,
+            notes: buildClientNotes(getValue(row, 'notes'), row, unmappedColumns),
             brokerId,
           },
         });
