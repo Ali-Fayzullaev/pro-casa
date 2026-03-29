@@ -35,8 +35,6 @@ export function NotificationBell() {
 
   const fetchNotifications = async () => {
 
-    if (!token) return
-
     try {
       const res = await fetch(`${API_URL}/notifications?limit=10`, {
         credentials: 'include',
@@ -54,8 +52,6 @@ export function NotificationBell() {
 
   const markAsRead = async (id: string) => {
 
-    if (!token) return
-
     try {
       await fetch(`${API_URL}/notifications/${id}/read`, {
         method: "PATCH",
@@ -69,8 +65,6 @@ export function NotificationBell() {
 
   const markAllAsRead = async () => {
 
-    if (!token) return
-
     try {
       await fetch(`${API_URL}/notifications/read-all`, {
         method: "PATCH",
@@ -83,8 +77,6 @@ export function NotificationBell() {
   }
 
   const deleteNotification = async (id: string) => {
-
-    if (!token) return
 
     try {
       await fetch(`${API_URL}/notifications/${id}`, {
