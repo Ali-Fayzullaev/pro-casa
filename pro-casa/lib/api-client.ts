@@ -27,11 +27,14 @@ export const getAuthHeaders = (): Record<string, string> => {
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true, // Send httpOnly cookies with every request
 });
 
-// Request interceptor — токен + проверка expiry
+// Request interceptor — fallback to localStorage token for backward compatibility
 api.interceptors.request.use(
   (config) => {
+    // Cookie is sent automatically via withCredentials
+    // Also attach Authorization header as fallback if token exists in localStorage
     const token = getToken();
     if (token) {
       if (isTokenExpired(token)) {

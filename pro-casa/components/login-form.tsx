@@ -44,6 +44,7 @@ export function LoginForm({
       const res = await fetch(getApiUrl('/auth/login'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include", // Accept httpOnly cookie from server
         body: JSON.stringify({ email, password }),
       })
 

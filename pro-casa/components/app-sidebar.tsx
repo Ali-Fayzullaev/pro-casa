@@ -227,7 +227,11 @@ export function AppSidebar() {
     localStorage.setItem("openMenus", JSON.stringify(newOpenMenus))
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear httpOnly cookie on server
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+    await fetch(`${apiUrl}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     localStorage.removeItem("openMenus")

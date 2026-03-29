@@ -53,6 +53,10 @@ export function getToken(): string | null {
 /** Очищает данные авторизации и перенаправляет на логин. */
 export function clearAuthAndRedirect(): void {
   if (typeof window === 'undefined') return;
+  // Call server logout to clear httpOnly cookie
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
+  fetch(`${apiUrl}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   window.location.href = '/login';

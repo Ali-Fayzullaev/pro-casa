@@ -48,8 +48,18 @@ authRouter.post('/login', async (req: Request, res: Response): Promise<void> => 
     // Отправить данные пользователя без пароля
     const { password: _, ...userWithoutPassword } = user;
 
+    // Set httpOnly cookie
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? 'strict' : 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+
     res.json({
-      token,
+      token, // kept for backward compatibility during migration
       user: userWithoutPassword,
     });
   } catch (error) {
@@ -195,4 +205,11 @@ authRouter.put('/change-password', auth, async (req: Request, res: Response) => 
     console.error('Change password error:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }
+});
+
+
+// POST /api/auth/logout - выход
+authRouter.post('/logout', (_req: Request, res: Response) => {
+  res.clearCookie('token', { path: '/' });
+  res.json({ message: 'Вы вышли из системы' });
 });
