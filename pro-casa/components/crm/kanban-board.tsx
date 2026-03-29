@@ -389,7 +389,7 @@ export function KanbanBoard() {
                 )}
             </div>
 
-            <div className="flex-1 overflow-auto bg-muted/10 p-4 rounded-lg border">
+            <div className="flex-1 min-h-0 overflow-auto bg-muted/10 p-3 rounded-lg border">
                 {isCustom && !activeFunnel ? (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
                         <p>У вас еще нет воронок. Создайте свою первую воронку!</p>

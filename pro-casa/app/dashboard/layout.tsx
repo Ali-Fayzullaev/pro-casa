@@ -37,14 +37,14 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <StrategyProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex h-screen w-full overflow-hidden">
         <AppSidebar />
-        <main className="flex-1 overflow-auto bg-muted/5">
-          <div className="flex items-center p-4 md:hidden border-b bg-background sticky top-0 z-20">
+        <main className="flex-1 flex flex-col overflow-hidden bg-muted/5">
+          <div className="flex items-center p-4 md:hidden border-b bg-background sticky top-0 z-20 shrink-0">
             <SidebarTrigger />
             <span className="ml-2 font-semibold">Pro Casa</span>
           </div>
-          <div className="container mx-auto p-4 md:p-6 lg:p-8">{children}</div>
+          <div className="flex-1 overflow-auto">{children}</div>
         </main>
       </div>
       </StrategyProvider>
