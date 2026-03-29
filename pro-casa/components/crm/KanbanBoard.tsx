@@ -486,14 +486,8 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty, is
     // Usually lists are sorted by date or name. We can add sorting logic inside PropertiesTableView.
 
     return (
-        <div className="h-full flex flex-col space-y-4">
-            <div className="flex justify-between items-center mb-4 px-1">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        {type === "sellers" ? "Продавцы" : "Объекты"}
-                    </h1>
-                </div>
-
+        <div className="h-full flex flex-col">
+            <div className="flex justify-end items-center py-1 px-2 shrink-0">
                 <div className="flex items-center gap-2">
                     {userRole !== "REALTOR" && userRole !== "AGENCY" && (
                         <Button
@@ -517,7 +511,7 @@ export function KanbanBoard({ type, columns, items, onDragEnd, onAddProperty, is
                 autoScroll={true}
             >
 
-                <div className="flex gap-3 flex-1 min-h-0 overflow-x-auto pb-2">
+                <div className="flex gap-3 flex-1 min-h-0 overflow-x-auto px-2 py-2">
                     {columns.map((col) => (
                         <KanbanColumn
                             key={col.id}

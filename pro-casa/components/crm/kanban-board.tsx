@@ -260,9 +260,8 @@ export function KanbanBoard() {
     const isCustom = crmMode === "CUSTOM";
 
     return (
-        <div className="h-full flex flex-col space-y-4">
+        <div className="h-full flex flex-col overflow-hidden">
             {/* Forms */}
-            {/* Seller Creation Form */}
             <CreateSellerForm
                 open={isSellerFormOpen}
                 onOpenChange={(v) => {
@@ -294,8 +293,8 @@ export function KanbanBoard() {
                 />
             )}
 
-            {/* Control Panel inside the tab */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            {/* Control Panel */}
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between px-4 py-2 bg-background border-b shrink-0">
                 <div className="flex items-center gap-4">
                     {!isCustom && (
                         <div className="flex items-center gap-2">
@@ -389,7 +388,7 @@ export function KanbanBoard() {
                 )}
             </div>
 
-            <div className="flex-1 min-h-0 overflow-auto bg-muted/10 p-3 rounded-lg border">
+            <div className="flex-1 min-h-0 overflow-hidden bg-slate-100">
                 {isCustom && !activeFunnel ? (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground gap-4">
                         <p>У вас еще нет воронок. Создайте свою первую воронку!</p>
