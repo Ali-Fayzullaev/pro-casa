@@ -191,16 +191,10 @@ export function AppSidebar() {
 
   // Load user and open menus state from localStorage
   useEffect(() => {
-    const loadUser = () => {
-      const userData = localStorage.getItem("user")
-      if (userData) {
-        setUser(JSON.parse(userData))
-      }
+    const userData = localStorage.getItem("user")
+    if (userData) {
+      setUser(JSON.parse(userData))
     }
-    loadUser()
-
-    // Listen for profile updates from other components
-    window.addEventListener('storage', loadUser)
 
     // Load saved open menus state
     const savedOpenMenus = localStorage.getItem("openMenus")
@@ -216,8 +210,6 @@ export function AppSidebar() {
       })
       setOpenMenus(defaultOpen)
     }
-
-    return () => window.removeEventListener('storage', loadUser)
   }, [])
 
   // Toggle menu open state and save to localStorage
@@ -227,11 +219,7 @@ export function AppSidebar() {
     localStorage.setItem("openMenus", JSON.stringify(newOpenMenus))
   }
 
-  const handleLogout = async () => {
-    // Clear httpOnly cookie on server
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-    const apiUrl = baseUrl.endsWith('/api') ? baseUrl : `${baseUrl}/api`;
-    await fetch(`${apiUrl}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+  const handleLogout = () => {
     localStorage.removeItem("token")
     localStorage.removeItem("user")
     localStorage.removeItem("openMenus")

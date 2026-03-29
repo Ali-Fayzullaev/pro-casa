@@ -98,9 +98,9 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/auth/me`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -120,13 +120,13 @@ export default function ProfilePage() {
 
   const fetchStats = async () => {
     try {
-
+      const token = localStorage.getItem("token");
 
       // Fetch deals, clients, bookings in parallel
       const [dealsRes, clientsRes, bookingsRes] = await Promise.all([
-        fetch(`${API_URL}/deals?limit=100`, { credentials: 'include' }),
-        fetch(`${API_URL}/clients?limit=100`, { credentials: 'include' }),
-        fetch(`${API_URL}/bookings?limit=100`, { credentials: 'include' })
+        fetch(`${API_URL}/deals?limit=100`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/clients?limit=100`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_URL}/bookings?limit=100`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       let totalDeals = 0, closedDeals = 0, activeDeals = 0, totalCommission = 0;
@@ -187,9 +187,9 @@ export default function ProfilePage() {
 
   const fetchCourses = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/my`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -202,9 +202,9 @@ export default function ProfilePage() {
 
   const fetchPayments = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/payments/my`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -217,27 +217,22 @@ export default function ProfilePage() {
 
   const handleEditProfile = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/auth/profile`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(editForm),
-        credentials: 'include',
       });
 
       if (res.ok) {
         const updatedUser = await res.json();
-        // Update localStorage so sidebar and other components reflect the changes
         const storedUser = localStorage.getItem("user");
         if (storedUser) {
           const parsed = JSON.parse(storedUser);
-          const newUserData = { ...parsed, ...updatedUser };
-          localStorage.setItem("user", JSON.stringify(newUserData));
-          // Notify other components about the change
-          window.dispatchEvent(new Event('storage'));
+          localStorage.setItem("user", JSON.stringify({ ...parsed, ...updatedUser }));
         }
         toast({ title: "Профиль обновлен", description: "Ваши данные успешно сохранены" });
         setEditDialogOpen(false);
@@ -262,17 +257,17 @@ export default function ProfilePage() {
     }
 
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/auth/change-password`, {
-        credentials: 'include',
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword}),
+          newPassword: passwordForm.newPassword,
+        }),
       });
 
       if (res.ok) {
@@ -290,15 +285,14 @@ export default function ProfilePage() {
 
   const handleCourseToggle = async (courseId: number, completed: boolean) => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/${courseId}/complete`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ completed }),
-        credentials: 'include',
       });
 
       if (res.ok) {

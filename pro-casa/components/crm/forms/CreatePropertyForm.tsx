@@ -52,12 +52,6 @@ import {
 import { cn } from "@/lib/utils";
 import { StrategyLoader } from "@/components/ui/StrategyLoader";
 
-const fmtNum = (v: any): string => {
-    if (v == null || v === "" || v === 0) return "";
-    return String(v).replace(/\s/g, "").replace(/[^\d]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-};
-const parseNum = (v: string): number | null => { const raw = v.replace(/\s/g, ""); if (!raw) return null; const n = Number(raw); return isNaN(n) ? null : n; };
-
 interface CreatePropertyFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -355,7 +349,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                                                     <FormItem>
                                                         <FormLabel>Цена (KZT)</FormLabel>
                                                         <FormControl>
-                                                            <Input placeholder="50 000 000" className="font-bold font-mono" value={fmtNum(field.value) || ""} onChange={(e) => field.onChange(parseNum(e.target.value))} />
+                                                            <Input type="number" step="100000" className="font-bold" {...field} />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -616,7 +610,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                                                         <FormItem>
                                                             <FormLabel>Остаток долга (KZT)</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="5 000 000" className="font-mono" value={fmtNum(field.value) || ""} onChange={(e) => field.onChange(parseNum(e.target.value))} />
+                                                                <Input type="number" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>

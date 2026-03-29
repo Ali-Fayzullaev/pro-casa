@@ -10,13 +10,9 @@ import {
     Briefcase,
     CheckCircle2,
     Clock,
-    ArrowRight,
-    UserPlus,
-    CalendarPlus,
-    Search
+    ArrowRight
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
@@ -61,7 +57,6 @@ interface DashboardData {
 
 export function HomePage() {
     const [data, setData] = useState<DashboardData | null>(null);
-    const [recentActivity, setRecentActivity] = useState<Array<{ id: string; type: string; title: string; description: string; date: string }>>([]);
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
 
@@ -73,12 +68,8 @@ export function HomePage() {
 
         const fetchData = async () => {
             try {
-                const [dashRes, activityRes] = await Promise.all([
-                    api.get("/analytics/dashboard"),
-                    api.get("/dashboard/recent-activity").catch(() => ({ data: [] })),
-                ]);
-                setData(dashRes.data);
-                setRecentActivity(activityRes.data);
+                const res = await api.get("/analytics/dashboard");
+                setData(res.data);
             } catch (error) {
                 console.error("Dashboard fetch error:", error);
             } finally {
@@ -119,19 +110,6 @@ export function HomePage() {
                 <p className="text-muted-foreground mt-2">
                     Вот сводка вашей эффективности на сегодня.
                 </p>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap gap-3">
-                <Link href="/dashboard/clients/new">
-                    <Button className="gap-2"><UserPlus className="h-4 w-4" />Добавить клиента</Button>
-                </Link>
-                <Link href="/dashboard/clients?search=">
-                    <Button variant="outline" className="gap-2"><Search className="h-4 w-4" />Проверить ИИН</Button>
-                </Link>
-                <Link href="/dashboard/bookings/new">
-                    <Button variant="outline" className="gap-2"><CalendarPlus className="h-4 w-4" />Создать бронь</Button>
-                </Link>
             </div>
 
             {/* KPI Cards */}
@@ -231,19 +209,14 @@ export function HomePage() {
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {recentActivity.length === 0 ? (
-                                    <p className="text-sm text-gray-500">Нет недавних действий</p>
-                                ) : recentActivity.map((item, i) => (
+                                {data?.activity.map((item, i) => (
                                     <div key={i} className="flex gap-3">
-                                        <div className={`mt-1 h-2 w-2 rounded-full shrink-0 ${
-                                            item.type === 'client' ? 'bg-blue-400' :
-                                            item.type === 'booking' ? 'bg-yellow-400' : 'bg-green-400'
-                                        }`} />
+                                        <div className="mt-1 h-2 w-2 rounded-full bg-blue-400 shrink-0" />
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium leading-none">{item.title}</p>
                                             <p className="text-xs text-muted-foreground">{item.description}</p>
                                             <p className="text-[10px] text-gray-400">
-                                                {new Date(item.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                {new Date(item.date).toLocaleDateString()}
                                             </p>
                                         </div>
                                     </div>

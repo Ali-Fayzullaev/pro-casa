@@ -98,8 +98,9 @@ export default function CalendarPage() {
             const start = startOfMonth(currentDate).toISOString();
             const end = endOfMonth(currentDate).toISOString();
 
+            const token = localStorage.getItem('token');
             const res = await fetch(getApiUrl(`/events?start=${start}&end=${end}`), {
-                credentials: 'include'
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (!res.ok) throw new Error('Failed to fetch events');
@@ -180,6 +181,7 @@ export default function CalendarPage() {
                 location: form.location,
             };
 
+            const token = localStorage.getItem('token');
             const url = editingEvent
                 ? getApiUrl(`/events/${editingEvent.id}`)
                 : getApiUrl('/events');
@@ -190,10 +192,9 @@ export default function CalendarPage() {
                 method,
                 headers: {
                     'Content-Type': 'application/json',
-
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(payload)
-              credentials: 'include',
             });
 
             if (!res.ok) throw new Error('Failed to save');
@@ -214,10 +215,10 @@ export default function CalendarPage() {
 
         setSaving(true);
         try {
-
+            const token = localStorage.getItem('token');
             const res = await fetch(getApiUrl(`/events/${editingEvent.id}`), {
                 method: 'DELETE',
-                credentials: 'include'
+                headers: { 'Authorization': `Bearer ${token}` }
             });
 
             if (!res.ok) throw new Error('Failed to delete');

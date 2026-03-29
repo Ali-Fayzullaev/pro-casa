@@ -37,12 +37,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, Clock, DollarSign, Home, MessageSquare, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const fmtNum = (v: any): string => {
-    if (v == null || v === "" || v === 0) return "";
-    return String(v).replace(/\s/g, "").replace(/[^\d]/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-};
-const parseNum = (v: string): number | null => { const raw = v.replace(/\s/g, ""); if (!raw) return null; const n = Number(raw); return isNaN(n) ? null : n; };
-
 interface CreateSellerFormProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -489,10 +483,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     <FormLabel>Бюджет покупки (₸)</FormLabel>
                                                     <FormControl>
                                                         <Input
+                                                            type="number"
                                                             placeholder="60 000 000"
-                                                            value={fmtNum(field.value)}
-                                                            onChange={(e) => field.onChange(parseNum(e.target.value))}
-                                                            className="font-mono"
+                                                            {...field}
+                                                            value={field.value ?? ""}
+                                                            onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                         />
                                                     </FormControl>
                                                     <FormMessage />
@@ -816,7 +811,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                 Понимание ценовых ожиданий помогает выстроить правильную стратегию.
                                             </p>
 
-                                            <div className="grid grid-cols-2 gap-3 items-end">
+                                            <div className="grid grid-cols-2 gap-4">
                                                 <FormField
                                                     control={form.control}
                                                     name="expectedPrice"
@@ -825,13 +820,13 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                             <FormLabel>Желаемая цена (₸)</FormLabel>
                                                             <FormControl>
                                                                 <Input
+                                                                    type="number"
                                                                     placeholder="50 000 000"
-                                                                    value={fmtNum(field.value)}
-                                                                    onChange={(e) => field.onChange(parseNum(e.target.value))}
-                                                                    className="font-mono"
+                                                                    {...field}
+                                                                    value={field.value ?? ""}
+                                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                 />
                                                             </FormControl>
-                                                            <FormDescription className="invisible">placeholder</FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
@@ -844,10 +839,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                             <FormLabel>Минимальная цена (₸)</FormLabel>
                                                             <FormControl>
                                                                 <Input
+                                                                    type="number"
                                                                     placeholder="45 000 000"
-                                                                    value={fmtNum(field.value)}
-                                                                    onChange={(e) => field.onChange(parseNum(e.target.value))}
-                                                                    className="font-mono"
+                                                                    {...field}
+                                                                    value={field.value ?? ""}
+                                                                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                 />
                                                             </FormControl>
                                                             <FormDescription>Ниже которой не готов опускаться</FormDescription>
@@ -969,10 +965,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                                 <FormLabel>Бюджет на покупку (₸)</FormLabel>
                                                                 <FormControl>
                                                                     <Input
+                                                                        type="number"
                                                                         placeholder="60 000 000"
-                                                                        value={fmtNum(field.value)}
-                                                                        onChange={(e) => field.onChange(parseNum(e.target.value))}
-                                                                        className="font-mono"
+                                                                        {...field}
+                                                                        value={field.value ?? ""}
+                                                                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />
@@ -1011,10 +1008,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                                 <FormLabel>Ежемесячный платеж (₸)</FormLabel>
                                                                 <FormControl>
                                                                     <Input
+                                                                        type="number"
                                                                         placeholder="150 000"
-                                                                        value={fmtNum(field.value)}
-                                                                        onChange={(e) => field.onChange(parseNum(e.target.value))}
-                                                                        className="font-mono"
+                                                                        {...field}
+                                                                        value={field.value ?? ""}
+                                                                        onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage />

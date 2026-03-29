@@ -47,11 +47,14 @@ export default function ChessboardSelectPage() {
 
   const fetchProjects = async () => {
     try {
-
+      const token = localStorage.getItem('token');
       const response = await fetch(
         getApiUrl('/projects'),
         {
-          }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) throw new Error('Failed to fetch projects');

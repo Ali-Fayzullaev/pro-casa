@@ -13,8 +13,7 @@ import {
   User,
   Wallet,
   Calendar,
-  Building,
-  Download
+  Building
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,7 +44,6 @@ import {
 } from "@/components/ui/select"
 import { getStatusColor, getClientTypeColor } from "@/lib/design-tokens"
 import { API_URL } from "@/lib/config"
-import { exportToExcel, exportToCsv } from "@/lib/export-utils"
 
 interface Client {
   id: string
@@ -80,6 +78,8 @@ export default function ClientsPage() {
   }, [page, statusFilter, typeFilter, cityFilter])
 
   const fetchClients = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       const params = new URLSearchParams({
@@ -93,7 +93,7 @@ export default function ClientsPage() {
       if (search) params.append("search", search)
 
       const response = await fetch(`${API_URL}/clients?${params}`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
@@ -133,15 +133,10 @@ export default function ClientsPage() {
             </p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => exportToExcel('clients', 'Клиенты')}>
-            <Download className="mr-2 h-4 w-4" />Excel
-          </Button>
-          <Button onClick={() => router.push("/dashboard/clients/new")}>
-            <Plus className="mr-2 h-4 w-4" />
-            Добавить клиента
-          </Button>
-        </div>
+        <Button onClick={() => router.push("/dashboard/clients/new")}>
+          <Plus className="mr-2 h-4 w-4" />
+          Добавить клиента
+        </Button>
       </div>
 
       <Card>

@@ -48,15 +48,17 @@ export default function NewApartmentPage() {
     if (!file) return;
 
     setUploadingLayout(true);
-
+    const token = localStorage.getItem('token');
 
     try {
       const formDataUpload = new FormData();
       formDataUpload.append('file', file);
 
       const response = await fetch(`${API_URL}/upload/single`, {
-        credentials: 'include',
         method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
         body: formDataUpload,
       });
 
@@ -88,12 +90,12 @@ export default function NewApartmentPage() {
     setSubmitting(true);
 
     try {
-
+      const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_URL}/apartments`, {
         method: 'POST',
         headers: {
-
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -105,7 +107,8 @@ export default function NewApartmentPage() {
           price: parseFloat(formData.price),
           status: 'AVAILABLE',
           layoutImage: layoutImage || undefined,
-          description: formData.description || undefined}),
+          description: formData.description || undefined,
+        }),
       });
 
       if (!response.ok) {

@@ -100,14 +100,14 @@ export default function NewBookingPage() {
 
   const fetchData = async () => {
     try {
-
+      const token = localStorage.getItem("token")
       
       const [clientsRes, projectsRes] = await Promise.all([
         fetch(`${API_URL}/clients?limit=100`, {
-          credentials: 'include',
+          headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_URL}/projects?limit=100`, {
-          credentials: 'include',
+          headers: { Authorization: `Bearer ${token}` },
         }),
       ])
 
@@ -129,9 +129,9 @@ export default function NewBookingPage() {
 
   const fetchApartmentDetails = async (apartmentId: string) => {
     try {
-
+      const token = localStorage.getItem("token")
       const res = await fetch(`${API_URL}/apartments/${apartmentId}`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
       if (res.ok) {
         const data = await res.json()
@@ -161,19 +161,19 @@ export default function NewBookingPage() {
     setSubmitting(true)
     
     try {
-
+      const token = localStorage.getItem("token")
       const res = await fetch(`${API_URL}/bookings`, {
-        credentials: 'include',
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           clientId: selectedClientId,
           apartmentId: selectedApartmentId,
           notes,
-          expirationDays: parseInt(expirationDays)}),
+          expirationDays: parseInt(expirationDays),
+        }),
       })
 
       if (res.ok) {

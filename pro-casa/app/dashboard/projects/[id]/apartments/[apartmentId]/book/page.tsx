@@ -62,13 +62,13 @@ export default function BookApartmentPage() {
 
   const fetchData = async () => {
     try {
-
+      const token = localStorage.getItem('token');
 
       // Получаем квартиру
       const aptRes = await fetch(
         getApiUrl(`/apartments/${params.apartmentId}`),
         {
-          credentials: 'include',
+          headers: { 'Authorization': `Bearer ${token}` },
         }
       );
       const aptData = await aptRes.json();
@@ -78,7 +78,7 @@ export default function BookApartmentPage() {
       const clientsRes = await fetch(
         getApiUrl('/clients'),
         {
-          credentials: 'include',
+          headers: { 'Authorization': `Bearer ${token}` },
         }
       );
       const clientsData = await clientsRes.json();
@@ -102,24 +102,24 @@ export default function BookApartmentPage() {
     setError('');
 
     try {
-
+      const token = localStorage.getItem('token');
 
       // Рассчитываем время истечения
       const expiresAt = new Date();
       expiresAt.setHours(expiresAt.getHours() + parseInt(expiresInHours));
 
       const response = await fetch(getApiUrl('/bookings'), {
-        credentials: 'include',
         method: 'POST',
         headers: {
-
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           clientId,
           apartmentId: params.apartmentId,
           expiresAt: expiresAt.toISOString(),
-          notes}),
+          notes,
+        }),
       });
 
       const data = await response.json();

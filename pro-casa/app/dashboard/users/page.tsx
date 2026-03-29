@@ -60,10 +60,12 @@ export default function UsersPage() {
 
   const fetchUsers = async () => {
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(getApiUrl('/admin/users'), {
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -97,12 +99,14 @@ export default function UsersPage() {
     if (!deleteUserId) return;
 
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(getApiUrl(`/admin/users/${deleteUserId}`), {
-        credentials: 'include',
         method: 'DELETE',
-        });
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

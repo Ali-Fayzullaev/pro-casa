@@ -30,11 +30,13 @@ export default function NotificationsPage() {
   }, [page])
 
   const fetchNotifications = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     setLoading(true)
     try {
       const res = await fetch(`${API_URL}/notifications?page=${page}&limit=20`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (res.ok) {
@@ -51,11 +53,13 @@ export default function NotificationsPage() {
   }
 
   const markAsRead = async (id: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       await fetch(`${API_URL}/notifications/${id}/read`, {
         method: "PATCH",
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
       fetchNotifications()
     } catch (error) {
@@ -64,11 +68,13 @@ export default function NotificationsPage() {
   }
 
   const markAllAsRead = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       await fetch(`${API_URL}/notifications/read-all`, {
         method: "PATCH",
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
       fetchNotifications()
     } catch (error) {
@@ -77,11 +83,13 @@ export default function NotificationsPage() {
   }
 
   const deleteNotification = async (id: string) => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       await fetch(`${API_URL}/notifications/${id}`, {
         method: "DELETE",
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
       fetchNotifications()
     } catch (error) {

@@ -23,12 +23,6 @@ import {
 } from '@/components/ui/select';
 import { getApiUrl } from '@/lib/api-config';
 
-const formatNumber = (val: string) => {
-  const num = val.replace(/\s/g, '').replace(/[^\d]/g, '');
-  return num.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-};
-const parseNumber = (val: string) => val.replace(/\s/g, '');
-
 interface ClientFormData {
   iin: string;
   firstName: string;
@@ -68,9 +62,11 @@ export default function EditClientPage() {
 
   const fetchClient = async () => {
     try {
-
+      const token = localStorage.getItem('token');
       const response = await fetch(getApiUrl(`/clients/${params.id}`), {
-        credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       if (!response.ok) {
@@ -109,14 +105,14 @@ export default function EditClientPage() {
     setError('');
 
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(getApiUrl(`/clients/${params.id}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           iin: formData.iin,
           firstName: formData.firstName,
@@ -127,7 +123,8 @@ export default function EditClientPage() {
           notes: formData.notes || undefined,
           status: formData.status,
           monthlyIncome: formData.monthlyIncome ? parseFloat(formData.monthlyIncome) : undefined,
-          initialPayment: formData.initialPayment ? parseFloat(formData.initialPayment) : undefined}),
+          initialPayment: formData.initialPayment ? parseFloat(formData.initialPayment) : undefined,
+        }),
       });
 
       const data = await response.json();
@@ -183,7 +180,7 @@ export default function EditClientPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="iin">ИИН *</Label>
                 <Input
@@ -193,7 +190,6 @@ export default function EditClientPage() {
                   onChange={(e) => handleChange('iin', e.target.value)}
                   maxLength={12}
                   required
-                  className="font-mono"
                 />
               </div>
 
@@ -247,7 +243,7 @@ export default function EditClientPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="phone">Телефон *</Label>
                 <Input
@@ -256,7 +252,6 @@ export default function EditClientPage() {
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   required
-                  className="font-mono"
                 />
               </div>
 
@@ -271,26 +266,26 @@ export default function EditClientPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="monthlyIncome">Ежемес. доход (₸)</Label>
+                <Label htmlFor="monthlyIncome">Ежемесячный доход (₸)</Label>
                 <Input
                   id="monthlyIncome"
-                  placeholder="500 000"
-                  value={formatNumber(formData.monthlyIncome)}
-                  onChange={(e) => handleChange('monthlyIncome', parseNumber(e.target.value))}
-                  className="font-mono"
+                  type="number"
+                  placeholder="500000"
+                  value={formData.monthlyIncome}
+                  onChange={(e) => handleChange('monthlyIncome', e.target.value)}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="initialPayment">Первонач. взнос (₸)</Label>
+                <Label htmlFor="initialPayment">Первоначальный взнос (₸)</Label>
                 <Input
                   id="initialPayment"
-                  placeholder="5 000 000"
-                  value={formatNumber(formData.initialPayment)}
-                  onChange={(e) => handleChange('initialPayment', parseNumber(e.target.value))}
-                  className="font-mono"
+                  type="number"
+                  placeholder="5000000"
+                  value={formData.initialPayment}
+                  onChange={(e) => handleChange('initialPayment', e.target.value)}
                 />
               </div>
             </div>

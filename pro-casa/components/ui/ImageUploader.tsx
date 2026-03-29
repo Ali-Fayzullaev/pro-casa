@@ -55,7 +55,6 @@ export function ImageUploader({ propertyId, images = [], onImagesChange }: Image
 
                 const res = await api.post(`/uploads/property/${propertyId}/images`, formData, {
                     headers: { "Content-Type": "multipart/form-data" },
-                  credentials: 'include',
                 });
                 if (res.data.url) {
                     newUrls.push(res.data.url);

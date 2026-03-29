@@ -114,10 +114,12 @@ export default function ProjectDetailsPage() {
   }, [])
 
   const fetchProjectDetails = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       const response = await fetch(`${API_URL}/projects/${params.id}`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {

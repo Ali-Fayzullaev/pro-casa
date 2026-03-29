@@ -54,7 +54,8 @@ export default function NewDealPage() {
                     source,
                     stage,
                     notes,
-                    title: clientName}),
+                    title: clientName
+                }),
             });
 
             if (!res.ok) {

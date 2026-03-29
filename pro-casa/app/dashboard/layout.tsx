@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { API_URL } from "@/lib/api-client"
+import { getToken, isTokenExpired } from "@/lib/auth-utils"
 
 export default function DashboardLayout({
   children,
@@ -15,32 +15,14 @@ export default function DashboardLayout({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check auth: try cookie first, fallback to localStorage token
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-
-    if (!user && !token) {
-      router.push("/login");
-      return;
+    const token = getToken()
+    if (!token || isTokenExpired(token)) {
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
+      router.push("/login")
+    } else {
+      setLoading(false)
     }
-
-    // Verify with server
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    fetch(`${API_URL}/auth/check`, {
-      credentials: 'include',
-      headers,
-    })
-      .then(res => {
-        if (!res.ok) throw new Error('Not authenticated');
-        setLoading(false);
-      })
-      .catch(() => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        router.push("/login");
-      });
   }, [router])
 
   if (loading) {

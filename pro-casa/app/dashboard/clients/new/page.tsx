@@ -50,14 +50,14 @@ export default function NewClientPage() {
     setError('');
 
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(getApiUrl('/clients'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
-        credentials: 'include',
         body: JSON.stringify({
           ...formData,
           middleName: formData.middleName || undefined,
@@ -111,7 +111,7 @@ export default function NewClientPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="iin">ИИН *</Label>
                 <Input
@@ -121,9 +121,10 @@ export default function NewClientPage() {
                   onChange={(e) => handleChange('iin', e.target.value)}
                   maxLength={12}
                   required
-                  className="font-mono"
                 />
-                <p className="text-xs text-muted-foreground">12 цифр</p>
+                <p className="text-xs text-muted-foreground">
+                  12 цифр индивидуального идентификационного номера
+                </p>
               </div>
 
               <div className="space-y-2">

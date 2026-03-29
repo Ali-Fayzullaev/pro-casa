@@ -44,7 +44,6 @@ export function LoginForm({
       const res = await fetch(getApiUrl('/auth/login'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include", // Accept httpOnly cookie from server
         body: JSON.stringify({ email, password }),
       })
 
@@ -55,10 +54,9 @@ export function LoginForm({
         return
       }
 
-      // Сохранить данные пользователя (токен хранится в httpOnly cookie)
+      // Сохранить токен
+      localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
-      // Fallback: also store token for dev mode (different ports)
-      if (data.token) localStorage.setItem("token", data.token)
 
       // Перенаправить на dashboard
       router.push("/dashboard")

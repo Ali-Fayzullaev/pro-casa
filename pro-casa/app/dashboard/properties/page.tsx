@@ -90,6 +90,8 @@ export default function PropertiesPage() {
   }, [page, typeFilter, statusFilter, cityFilter])
 
   const fetchProperties = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       const params = new URLSearchParams({
@@ -103,7 +105,7 @@ export default function PropertiesPage() {
       if (search) params.append("search", search)
 
       const res = await fetch(`${API_URL}/properties?${params}`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (res.ok) {
@@ -127,10 +129,11 @@ export default function PropertiesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm("Удалить объект?")) return
 
+    const token = localStorage.getItem("token")
     try {
       const res = await fetch(`${API_URL}/properties/${id}`, {
         method: "DELETE",
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (res.ok) {
@@ -142,16 +145,15 @@ export default function PropertiesPage() {
   }
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-
+    const token = localStorage.getItem("token")
     try {
       const res = await fetch(`${API_URL}/properties/${id}`, {
         method: "PUT",
         headers: {
-
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ status: newStatus }),
-        credentials: 'include',
       })
 
       if (res.ok) {

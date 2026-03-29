@@ -80,7 +80,7 @@ export function FileUpload({
     setProgress(0)
 
     try {
-
+      const token = localStorage.getItem("token")
       const formData = new FormData()
 
       if (multiple && selectedFiles.length > 1) {
@@ -89,8 +89,10 @@ export function FileUpload({
         })
 
         const response = await fetch(`${API_URL}/upload/multiple`, {
-          credentials: 'include',
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         })
 
@@ -106,8 +108,10 @@ export function FileUpload({
         formData.append("file", selectedFiles[0])
 
         const response = await fetch(`${API_URL}/upload/single`, {
-          credentials: 'include',
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         })
 

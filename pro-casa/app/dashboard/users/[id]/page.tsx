@@ -83,9 +83,9 @@ export default function BrokerDetailPage({ params }: { params: Promise<{ id: str
 
   const fetchBroker = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/admin/users/${id}/full`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       
       if (!res.ok) {
@@ -115,9 +115,9 @@ export default function BrokerDetailPage({ params }: { params: Promise<{ id: str
 
   const fetchAllCourses = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -130,15 +130,14 @@ export default function BrokerDetailPage({ params }: { params: Promise<{ id: str
 
   const handleSaveCurator = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/admin/users/${id}/curator`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(curatorForm),
-        credentials: 'include',
       });
       
       if (res.ok) {
@@ -156,17 +155,17 @@ export default function BrokerDetailPage({ params }: { params: Promise<{ id: str
     if (!selectedCourseId) return;
     
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/assign`, {
-        credentials: 'include',
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           courseId: selectedCourseId,
-          brokerId: id}),
+          brokerId: id,
+        }),
       });
       
       if (res.ok) {
@@ -185,10 +184,10 @@ export default function BrokerDetailPage({ params }: { params: Promise<{ id: str
 
   const handleUnassignCourse = async (courseId: string) => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/assign/${id}/${courseId}`, {
         method: "DELETE",
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       
       if (res.ok) {
@@ -209,19 +208,19 @@ export default function BrokerDetailPage({ params }: { params: Promise<{ id: str
     }
     
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/payments`, {
-        credentials: 'include',
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           brokerId: id,
           amount: parseFloat(paymentForm.amount),
           type: paymentForm.type,
-          description: paymentForm.description}),
+          description: paymentForm.description,
+        }),
       });
       
       if (res.ok) {

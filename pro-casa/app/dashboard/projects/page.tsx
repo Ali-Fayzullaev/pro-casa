@@ -112,6 +112,8 @@ export default function ProjectsCatalogPage() {
   }, [district, status, housingClass, minPrice, maxPrice, rooms, mortgageProgram])
 
   const fetchProjects = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       const params = new URLSearchParams()
@@ -124,7 +126,7 @@ export default function ProjectsCatalogPage() {
       if (mortgageProgram !== "ALL") params.append("mortgageProgram", mortgageProgram)
 
       const response = await fetch(`${API_URL}/projects?${params}`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
@@ -157,11 +159,13 @@ export default function ProjectsCatalogPage() {
     if (!deleteProjectId) return
     
     try {
-
+      const token = localStorage.getItem('token')
       const response = await fetch(`${API_URL}/projects/${deleteProjectId}`, {
-        credentials: 'include',
         method: 'DELETE',
-        })
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
 
       if (!response.ok) {
         throw new Error('Failed to delete project')

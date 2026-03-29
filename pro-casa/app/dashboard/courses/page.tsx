@@ -77,9 +77,9 @@ export default function CoursesAdminPage() {
 
   const fetchCourses = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -94,9 +94,9 @@ export default function CoursesAdminPage() {
 
   const fetchBrokers = async () => {
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/admin/users`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
@@ -114,15 +114,14 @@ export default function CoursesAdminPage() {
     }
 
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(courseForm),
-        credentials: 'include',
       });
 
       if (res.ok) {
@@ -142,15 +141,14 @@ export default function CoursesAdminPage() {
     if (!editingCourse || !courseForm.title) return;
 
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/${editingCourse.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(courseForm),
-        credentials: 'include',
       });
 
       if (res.ok) {
@@ -171,15 +169,14 @@ export default function CoursesAdminPage() {
     if (!confirm("Удалить курс?")) return;
 
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/${courseId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ isActive: false }),
-        credentials: 'include',
       });
 
       if (res.ok) {
@@ -198,17 +195,17 @@ export default function CoursesAdminPage() {
     }
 
     try {
-
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_URL}/courses/assign`, {
-        credentials: 'include',
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           courseId: selectedCourseForAssign,
-          brokerId: selectedBrokerId}),
+          brokerId: selectedBrokerId,
+        }),
       });
 
       if (res.ok) {

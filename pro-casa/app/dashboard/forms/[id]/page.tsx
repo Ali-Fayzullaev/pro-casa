@@ -58,7 +58,6 @@ export default function EditFormPage({ params }: { params: Promise<{ id: string 
     const fetchBrokers = async () => {
         try {
             const res = await fetch(getApiUrl('/users?role=BROKER'), {
-                credentials: 'include',
                 headers: getAuthHeaders()
             });
             if (res.ok) {
@@ -107,7 +106,6 @@ export default function EditFormPage({ params }: { params: Promise<{ id: string 
         try {
             setIsLoading(true);
             const res = await fetch(getApiUrl(`/forms/${id}`), {
-                credentials: 'include',
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -117,7 +115,8 @@ export default function EditFormPage({ params }: { params: Promise<{ id: string 
                     title,
                     distributionType,
                     fields,
-                    brokerIds: selectedBrokers}),
+                    brokerIds: selectedBrokers
+                }),
             });
 
             if (!res.ok) throw new Error("Failed to update");

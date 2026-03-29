@@ -67,6 +67,8 @@ export default function DealsPage() {
   }, [page, statusFilter])
 
   const fetchDeals = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
 
     try {
       const params = new URLSearchParams({
@@ -77,7 +79,7 @@ export default function DealsPage() {
       if (statusFilter !== "ALL") params.append("status", statusFilter)
 
       const res = await fetch(`${API_URL}/deals?${params}`, {
-        credentials: 'include',
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (res.ok) {

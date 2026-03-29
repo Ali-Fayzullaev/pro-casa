@@ -69,12 +69,15 @@ export default function EditApartmentPage() {
 
   const fetchApartment = async () => {
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(
         getApiUrl(`/apartments/${params.apartmentId}`),
         {
-          }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) throw new Error('Failed to fetch apartment');
@@ -107,14 +110,14 @@ export default function EditApartmentPage() {
     setSubmitting(true);
 
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(
         getApiUrl(`/apartments/${params.apartmentId}`),
         {
           method: 'PUT',
           headers: {
-
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
@@ -123,7 +126,8 @@ export default function EditApartmentPage() {
             rooms: parseInt(formData.rooms),
             area: parseFloat(formData.area),
             price: parseFloat(formData.price),
-            description: formData.description || undefined}),
+            description: formData.description || undefined,
+          }),
         }
       );
 
@@ -154,13 +158,16 @@ export default function EditApartmentPage() {
     setDeleting(true);
 
     try {
-
+      const token = localStorage.getItem('token');
 
       const response = await fetch(
         getApiUrl(`/apartments/${params.apartmentId}`),
         {
           method: 'DELETE',
-          }
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
       );
 
       if (!response.ok) {
