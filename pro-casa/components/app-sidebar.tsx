@@ -191,10 +191,16 @@ export function AppSidebar() {
 
   // Load user and open menus state from localStorage
   useEffect(() => {
-    const userData = localStorage.getItem("user")
-    if (userData) {
-      setUser(JSON.parse(userData))
+    const loadUser = () => {
+      const userData = localStorage.getItem("user")
+      if (userData) {
+        setUser(JSON.parse(userData))
+      }
     }
+    loadUser()
+
+    // Listen for profile updates from other components
+    window.addEventListener('storage', loadUser)
 
     // Load saved open menus state
     const savedOpenMenus = localStorage.getItem("openMenus")
@@ -210,6 +216,8 @@ export function AppSidebar() {
       })
       setOpenMenus(defaultOpen)
     }
+
+    return () => window.removeEventListener('storage', loadUser)
   }, [])
 
   // Toggle menu open state and save to localStorage

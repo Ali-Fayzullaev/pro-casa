@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import path from 'path';
 import { authRouter } from './routes/auth.routes';
@@ -40,10 +42,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+  : ['http://localhost:3000'];
+
 app.use(cors({
-  origin: true, // Allow any origin in development
+  origin: process.env.NODE_ENV === 'development' ? true : allowedOrigins,
   credentials: true,
 }));
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
@@ -54,6 +61,15 @@ app.get('/health', (_req, res) => {
 });
 
 // API Routes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 минут
+  max: 20, // макс 20 попыток логина за 15 мин
+  message: { error: 'Слишком много попыток входа. Попробуйте через 15 минут.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use('/api/auth/login', authLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);
 app.use('/api/admin/users', usersAdminRouter);
@@ -69,7 +85,7 @@ app.use('/api/deals', dealsRouter);
 app.use('/api/tasks', tasksRouter);
 app.use('/api/properties', propertiesRouter);
 app.use('/api/dashboard', dashboardRouter);
-app.use('/api/upload', uploadRouter);
+app.use('/api/upload', uploadRouter);       // MinIO / general file uploads
 app.use('/api/payments', paymentsRouter);
 app.use('/api/forms', formsRouter);
 app.use('/api/public/forms', publicFormsRouter);
@@ -78,12 +94,13 @@ app.use('/api/public/forms', publicFormsRouter);
 app.use('/api/sellers', sellersRouter);
 app.use('/api/crm-properties', crmPropertiesRouter);
 app.use('/api/buyers', buyersRouter);
-app.use('/api/uploads', uploadsRouter);
+app.use('/api/uploads', uploadsRouter);     // CRM property image/document uploads (local storage)
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/admin/settings', settingsRouter);
 app.use('/api/custom-funnels', customFunnelsRouter);
 app.use('/api/custom-fields', customFieldsRouter);
 app.use('/api/agency', agencyRouter);
+app.use('/api/events', eventsRouter);
 
 // Error handling
 app.use(errorHandler);

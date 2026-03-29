@@ -32,7 +32,11 @@ async function main() {
   console.log('🧹 Database completely cleaned');
 
   // 2. Create Admin User
-  const passwordHash = await bcrypt.hash('admin123', 10);
+  const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+  if (process.env.NODE_ENV === 'production' && adminPassword === 'admin123') {
+    console.warn('⚠️  WARNING: Using default admin password in production! Set ADMIN_PASSWORD env variable.');
+  }
+  const passwordHash = await bcrypt.hash(adminPassword, 12);
 
   const admin = await prisma.user.create({
     data: {
@@ -46,7 +50,7 @@ async function main() {
     },
   });
 
-  console.log('👤 Admin user created: admin@casa.kz / admin123');
+  console.log('👤 Admin user created: admin@casa.kz');
 
   // 3. Optional: Create basic dictionaries (can be commented out if total empty is needed)
   // For now, we leave it completely empty except Admin as requested.

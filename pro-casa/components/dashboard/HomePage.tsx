@@ -105,7 +105,7 @@ export function HomePage() {
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-                    {getGreeting()}, {user?.firstName} {user?.lastName}! ☕️
+                    {getGreeting()}, {user?.firstName} {user?.lastName}!
                 </h1>
                 <p className="text-muted-foreground mt-2">
                     Вот сводка вашей эффективности на сегодня.

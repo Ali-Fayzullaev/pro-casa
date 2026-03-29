@@ -109,7 +109,7 @@ function mapApiProgram(p: any): MortgageProgram {
     minDownPayment: Number(p.minDownPayment),
     maxTerm: p.maxTerm >= 12 ? Math.round(p.maxTerm / 12) : p.maxTerm,
     type: Number(p.interestRate) <= 10 ? 'Государственная' : 'Коммерческая',
-    housingTypes: housingMap[p.propertyType] || ['Новостройка', 'Вторичное'],
+    housingTypes: housingMap[p.propertyType as keyof typeof housingMap] || ['Новостройка', 'Вторичное'],
     description: p.programName + ' — ' + p.bankName,
     requirements: reqs,
     maxAmount: p.maxAmount ? Number(p.maxAmount) : undefined,

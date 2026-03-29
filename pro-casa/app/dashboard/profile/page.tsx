@@ -228,6 +228,16 @@ export default function ProfilePage() {
       });
 
       if (res.ok) {
+        const updatedUser = await res.json();
+        // Update localStorage so sidebar and other components reflect the changes
+        const storedUser = localStorage.getItem("user");
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          const newUserData = { ...parsed, ...updatedUser };
+          localStorage.setItem("user", JSON.stringify(newUserData));
+          // Notify other components about the change
+          window.dispatchEvent(new Event('storage'));
+        }
         toast({ title: "Профиль обновлен", description: "Ваши данные успешно сохранены" });
         setEditDialogOpen(false);
         fetchProfile();
