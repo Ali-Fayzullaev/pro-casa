@@ -270,12 +270,17 @@ export function SummaryDialog({ open, onOpenChange, data, type, initialActivePro
                                                             onClick={(e) => e.stopPropagation()}
                                                             onChange={async (e) => {
                                                                 const newStrategy = e.target.value;
-                                                                console.log('Changing strategy to:', newStrategy, 'for property:', property.id);
                                                                 try {
                                                                     await api.put(`/crm-properties/${property.id}/strategy`, { activeStrategy: newStrategy });
                                                                     toast.success("Стратегия изменена");
+                                                                    // Update local state immediately
+                                                                    property.activeStrategy = newStrategy;
+                                                                    property.isStrategyManual = true;
                                                                     queryClient.invalidateQueries({ queryKey: ["sellers"] });
                                                                     queryClient.invalidateQueries({ queryKey: ["properties"] });
+                                                                    // Force re-render
+                                                                    onOpenChange(false);
+                                                                    setTimeout(() => onOpenChange(true), 100);
                                                                 } catch (err: any) {
                                                                     console.error('Strategy change error:', err);
                                                                     toast.error(err?.response?.data?.error || "Ошибка смены стратегии");
