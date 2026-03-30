@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Loader2 } from "lucide-react"
 import api from "@/lib/api-client"
 import { toast } from "sonner"
+import { PriceInput } from "@/components/ui/price-input"
 import type { CrmProperty } from "@/types/kanban"
 
 interface Project {
@@ -54,17 +55,25 @@ export function TradeInForm({ open, onOpenChange, property }: TradeInFormProps) 
   const [notes, setNotes] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const { data: projects, isLoading: isLoadingProjects } = useQuery<Project[]>({
-    queryKey: ["projects"],
-    queryFn: () => api.get("/projects").then((r) => r.data),
+  const { data: rawProjects, isLoading: isLoadingProjects } = useQuery({
+    queryKey: ["tradein-projects"],
+    queryFn: () => api.get("/projects", { params: { limit: 100 } }).then((r) => {
+      const d = r.data;
+      return Array.isArray(d) ? d : (d.projects ?? d.data ?? []);
+    }),
     enabled: open,
   })
+  const projectsList: Project[] = Array.isArray(rawProjects) ? rawProjects : []
 
-  const { data: clients } = useQuery<Client[]>({
-    queryKey: ["clients"],
-    queryFn: () => api.get("/clients").then((r) => r.data),
+  const { data: rawClients } = useQuery({
+    queryKey: ["tradein-clients"],
+    queryFn: () => api.get("/clients", { params: { limit: 100 } }).then((r) => {
+      const d = r.data;
+      return Array.isArray(d) ? d : (d.clients ?? d.data ?? []);
+    }),
     enabled: open,
   })
+  const clientsList: Client[] = Array.isArray(rawClients) ? rawClients : []
 
   const commission = useMemo(() => {
     const price = Number(newApartmentPrice) || 0
@@ -152,7 +161,7 @@ export function TradeInForm({ open, onOpenChange, property }: TradeInFormProps) 
                 )}
               </SelectTrigger>
               <SelectContent>
-                {(projects ?? []).map((p) => (
+                {projectsList.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
                     {p.name}
                   </SelectItem>
@@ -163,11 +172,9 @@ export function TradeInForm({ open, onOpenChange, property }: TradeInFormProps) 
 
           <div className="space-y-2">
             <Label>Цена новой квартиры (₸)</Label>
-            <Input
-              type="number"
-              min="1"
+            <PriceInput
               value={newApartmentPrice}
-              onChange={(e) => setNewApartmentPrice(e.target.value)}
+              onChange={setNewApartmentPrice}
               placeholder="0"
             />
             {errors.newApartmentPrice && (
@@ -207,7 +214,7 @@ export function TradeInForm({ open, onOpenChange, property }: TradeInFormProps) 
                 <SelectValue placeholder="Выберите клиента" />
               </SelectTrigger>
               <SelectContent>
-                {(clients ?? []).map((c) => (
+                {clientsList.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.firstName} {c.lastName} ({c.phone})
                   </SelectItem>

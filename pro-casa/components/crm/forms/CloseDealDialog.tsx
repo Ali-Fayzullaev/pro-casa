@@ -7,12 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
 import api from "@/lib/api-client";
 import { toast } from "sonner";
 import { CheckCheck, Trophy, PartyPopper } from "lucide-react";
 import confetti from "canvas-confetti";
+import { PriceInput } from "@/components/ui/price-input";
 import { useState } from "react";
 
 const CloseDealSchema = z.object({
@@ -209,11 +210,15 @@ export function CloseDealDialog({ open, onOpenChange, propertyId, onSuccess }: C
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Финальная цена</Label>
-                            <Input type="number" {...form.register("finalPrice")} />
+                            <Controller name="finalPrice" control={form.control} render={({ field }) => (
+                              <PriceInput value={field.value ?? ""} onChange={field.onChange} placeholder="0" />
+                            )} />
                         </div>
                         <div className="space-y-2">
                             <Label>Комиссия (₸)</Label>
-                            <Input type="number" {...form.register("commission")} />
+                            <Controller name="commission" control={form.control} render={({ field }) => (
+                              <PriceInput value={field.value ?? ""} onChange={field.onChange} placeholder="0" />
+                            )} />
                         </div>
                     </div>
 

@@ -33,6 +33,15 @@ const statuses: MortgageApplication["status"][] = [
   "CANCELLED",
 ]
 
+const statusLabels: Record<MortgageApplication["status"], string> = {
+  DRAFT: "Черновик",
+  SUBMITTED: "Отправлена",
+  REVIEWING: "На рассмотрении",
+  APPROVED: "Одобрена",
+  REJECTED: "Отклонена",
+  CANCELLED: "Отменена",
+}
+
 interface StatusChangeDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -104,7 +113,7 @@ export function StatusChangeDialog({ open, onOpenChange, application }: StatusCh
               <SelectContent>
                 {statuses.map((s) => (
                   <SelectItem key={s} value={s}>
-                    {s}
+                    {statusLabels[s]}
                   </SelectItem>
                 ))}
               </SelectContent>

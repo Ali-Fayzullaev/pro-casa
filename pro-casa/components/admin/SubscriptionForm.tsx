@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api-client"
 import { toast } from "sonner"
+import { PriceInput } from "@/components/ui/price-input"
 
 interface User {
   id: string
@@ -46,11 +47,15 @@ export function SubscriptionForm({ open, onOpenChange }: SubscriptionFormProps) 
   const [expiresAt, setExpiresAt] = useState("")
   const [amount, setAmount] = useState("")
 
-  const { data: users } = useQuery<User[]>({
-    queryKey: ["users"],
-    queryFn: () => api.get("/users").then((r) => r.data),
+  const { data: rawUsers } = useQuery({
+    queryKey: ["subscription-users"],
+    queryFn: () => api.get("/users").then((r) => {
+      const d = r.data;
+      return Array.isArray(d) ? d : (d.users ?? d.data ?? []);
+    }),
     enabled: open,
   })
+  const users: User[] = Array.isArray(rawUsers) ? rawUsers : []
 
   const mutation = useMutation({
     mutationFn: (data: { userId: string; plan: string; expiresAt?: string; amount?: number }) =>
@@ -103,7 +108,7 @@ export function SubscriptionForm({ open, onOpenChange }: SubscriptionFormProps) 
                 <SelectValue placeholder="Выберите пользователя" />
               </SelectTrigger>
               <SelectContent>
-                {(users ?? []).map((u) => (
+                {users.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.firstName} {u.lastName} ({u.email})
                   </SelectItem>
@@ -139,12 +144,10 @@ export function SubscriptionForm({ open, onOpenChange }: SubscriptionFormProps) 
 
           <div className="space-y-2">
             <Label>Сумма (₸)</Label>
-            <Input
-              type="number"
-              min="0"
-              placeholder="0"
+            <PriceInput
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={setAmount}
+              placeholder="0"
             />
           </div>
 

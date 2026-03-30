@@ -1,6 +1,6 @@
 
 import { z } from "zod";
-import { useForm, Resolver } from "react-hook-form";
+import { useForm, Resolver, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PriceInput } from "@/components/ui/price-input";
 import {
     Select,
     SelectContent,
@@ -109,11 +110,15 @@ export function CreateBuyerDialog({ open, onOpenChange }: { open: boolean, onOpe
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Бюджет от</Label>
-                            <Input type="number" {...form.register("minBudget")} />
+                            <Controller name="minBudget" control={form.control} render={({ field }) => (
+                              <PriceInput value={field.value ?? ""} onChange={field.onChange} placeholder="0" />
+                            )} />
                         </div>
                         <div className="space-y-2">
                             <Label>Бюджет до</Label>
-                            <Input type="number" {...form.register("maxBudget")} />
+                            <Controller name="maxBudget" control={form.control} render={({ field }) => (
+                              <PriceInput value={field.value ?? ""} onChange={field.onChange} placeholder="0" />
+                            )} />
                         </div>
                     </div>
                     <div className="space-y-2">
@@ -322,7 +327,9 @@ export function CreateOfferDialog({ open, onOpenChange, propertyId }: { open: bo
                     </div>
                     <div className="space-y-2">
                         <Label>Сумма предложения (₸)</Label>
-                        <Input type="number" {...form.register("price")} className="font-bold text-lg" />
+                        <Controller name="price" control={form.control} render={({ field }) => (
+                          <PriceInput value={field.value ?? ""} onChange={field.onChange} placeholder="0" className="font-bold text-lg" />
+                        )} />
                         {form.formState.errors.price && <p className="text-red-500 text-xs">Укажите цену</p>}
                     </div>
                     <div className="space-y-2">

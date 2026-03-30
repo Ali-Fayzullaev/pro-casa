@@ -36,6 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ImageUploader } from "@/components/ui/ImageUploader";
 import { FileUploader } from "@/components/ui/FileUploader";
+import { PriceInput } from "@/components/ui/price-input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
     Building2,
@@ -350,7 +351,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                                                     <FormItem>
                                                         <FormLabel>Цена (KZT)</FormLabel>
                                                         <FormControl>
-                                                            <Input type="number" step="100000" className="font-bold" {...field} value={field.value ?? ""} />
+                                                            <PriceInput value={field.value ?? ""} onChange={field.onChange} className="font-bold" />
                                                         </FormControl>
                                                         <FormMessage />
                                                     </FormItem>
@@ -611,7 +612,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                                                         <FormItem>
                                                             <FormLabel>Остаток долга (KZT)</FormLabel>
                                                             <FormControl>
-                                                                <Input type="number" {...field} value={field.value ?? ""} />
+                                                                <PriceInput value={field.value ?? ""} onChange={field.onChange} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
