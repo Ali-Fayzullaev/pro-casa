@@ -47,45 +47,45 @@ interface CreateSellerFormProps {
 }
 
 const REASONS = [
-    { value: "SIZE_CHANGE", label: "РЈР»СѓС‡С€РµРЅРёРµ/СЃРјРµРЅР° Р¶РёР»СЊСЏ" },
-    { value: "RELOCATION", label: "РџРµСЂРµРµР·Рґ" },
-    { value: "INVESTMENT", label: "РРЅРІРµСЃС‚РёС†РёРѕРЅРЅР°СЏ РїСЂРѕРґР°Р¶Р°" },
-    { value: "DIVORCE", label: "Р Р°Р·РІРѕРґ" },
-    { value: "INHERITANCE", label: "РќР°СЃР»РµРґСЃС‚РІРѕ" },
-    { value: "FINANCIAL_NEED", label: "Р¤РёРЅР°РЅСЃРѕРІР°СЏ РЅРµРѕР±С…РѕРґРёРјРѕСЃС‚СЊ" },
-    { value: "OTHER", label: "Р”СЂСѓРіРѕРµ" },
+    { value: "SIZE_CHANGE", label: "Улучшение/смена жилья" },
+    { value: "RELOCATION", label: "Переезд" },
+    { value: "INVESTMENT", label: "Инвестиционная продажа" },
+    { value: "DIVORCE", label: "Развод" },
+    { value: "INHERITANCE", label: "Наследство" },
+    { value: "FINANCIAL_NEED", label: "Финансовая необходимость" },
+    { value: "OTHER", label: "Другое" },
 ];
 
 const DEADLINES = [
-    { value: "URGENT_30_DAYS", label: "РЎСЂРѕС‡РЅРѕ (РґРѕ 1 РјРµСЃСЏС†Р°)" },
-    { value: "NORMAL_90_DAYS", label: "1-3 РјРµСЃСЏС†Р°" },
-    { value: "FLEXIBLE_180_DAYS", label: "Р‘РѕР»РµРµ 3 РјРµСЃСЏС†РµРІ" },
-    { value: "NO_RUSH", label: "РќРµ СЃРїРµС€Сѓ" },
+    { value: "URGENT_30_DAYS", label: "Срочно (до 1 месяца)" },
+    { value: "NORMAL_90_DAYS", label: "1-3 месяца" },
+    { value: "FLEXIBLE_180_DAYS", label: "Более 3 месяцев" },
+    { value: "NO_RUSH", label: "Не спешу" },
 ];
 
 const MARKET_ASSESSMENTS = [
-    { value: "ADEQUATE", label: "РђРґРµРєРІР°С‚РЅР°СЏ" },
-    { value: "OVERPRICED", label: "Р—Р°РІС‹С€РµРЅРЅР°СЏ" },
-    { value: "UNCERTAIN", label: "РќРµ Р·РЅР°СЋ СЂС‹РЅРѕРє" },
+    { value: "ADEQUATE", label: "Адекватная" },
+    { value: "OVERPRICED", label: "Завышенная" },
+    { value: "UNCERTAIN", label: "Не знаю рынок" },
 ];
 
 const PURCHASE_FORMATS = [
-    { value: "NEW_BUILDING", label: "РќРѕРІРѕСЃС‚СЂРѕР№РєР°" },
-    { value: "SECONDARY", label: "Р’С‚РѕСЂРёС‡РєР°" },
-    { value: "HOUSE", label: "Р”РѕРј" },
-    { value: "NOT_DECIDED", label: "РќРµ РѕРїСЂРµРґРµР»РёР»СЃСЏ" },
+    { value: "NEW_BUILDING", label: "Новостройка" },
+    { value: "SECONDARY", label: "Вторичка" },
+    { value: "HOUSE", label: "Дом" },
+    { value: "NOT_DECIDED", label: "Не определился" },
 ];
 
 const INCOME_SOURCES = [
-    { value: "EMPLOYMENT", label: "РќР°РµРјРЅС‹Р№ СЂР°Р±РѕС‚РЅРёРє" },
-    { value: "BUSINESS", label: "Р‘РёР·РЅРµСЃ" },
-    { value: "RENTAL_INCOME", label: "Р РµРЅС‚Р°" },
-    { value: "PENSION", label: "РџРµРЅСЃРёСЏ" },
-    { value: "OTHER", label: "Р”СЂСѓРіРѕРµ" },
+    { value: "EMPLOYMENT", label: "Наемный работник" },
+    { value: "BUSINESS", label: "Бизнес" },
+    { value: "RENTAL_INCOME", label: "Рента" },
+    { value: "PENSION", label: "Пенсия" },
+    { value: "OTHER", label: "Другое" },
 ];
 
 const COMMUNICATION_CHANNELS = [
-    { value: "CALL", label: "Р—РІРѕРЅРѕРє" },
+    { value: "CALL", label: "Звонок" },
     { value: "WHATSAPP", label: "WhatsApp" },
     { value: "TELEGRAM", label: "Telegram" },
 ];
@@ -93,19 +93,18 @@ const COMMUNICATION_CHANNELS = [
 const SOURCES = [
     { value: "INSTAGRAM", label: "Instagram" },
     { value: "WHATSAPP", label: "WhatsApp" },
-    { value: "REFERRAL", label: "Р РµРєРѕРјРµРЅРґР°С†РёСЏ" },
-    { value: "WEBSITE", label: "РЎР°Р№С‚" },
-    { value: "OTHER", label: "Р”СЂСѓРіРѕРµ" },
+    { value: "REFERRAL", label: "Рекомендация" },
+    { value: "WEBSITE", label: "Сайт" },
+    { value: "OTHER", label: "Другое" },
 ];
 
 export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, activeFunnelId }: CreateSellerFormProps) {
-    const props = { open, onOpenChange, initialData, onSuccess, activeFunnelId }; // Capture for usage in mutation
+    const props = { open, onOpenChange, initialData, onSuccess, activeFunnelId };
     const queryClient = useQueryClient();
     const isEditMode = !!initialData?.id;
 
     const [expandedSections, setExpandedSections] = useState<string[]>(["basic", "reason", "price", "plans", "communication"]);
 
-    // Phone duplicate check state
     const [phoneCheckResult, setPhoneCheckResult] = useState<{
         exists: boolean;
         seller?: {
@@ -131,7 +130,6 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
             plansToPurchase: initialData?.plansToPurchase ?? false,
             hasDebts: initialData?.hasDebts ?? false,
             trustLevel: initialData?.trustLevel ?? 3,
-            // Pre-fill other fields if they exist in initialData
             reason: initialData?.reason as any,
             deadline: initialData?.deadline as any,
             expectedPrice: initialData?.expectedPrice,
@@ -158,8 +156,6 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
     });
     const projects = projectsData?.projects || [];
 
-    // Reset form when initialData changes (or sheet opens)
-    // This is crucial for the "Pre-fill" requirement when reusing the form component.
     useEffect(() => {
         if (open && initialData) {
             form.reset({
@@ -192,11 +188,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [initialData, open]);
 
-    // Watch for conditional fields
     const plansToPurchase = useWatch({ control: form.control, name: "plansToPurchase" });
     const phoneValue = useWatch({ control: form.control, name: "phone" });
 
-    // Debounced phone check
     useEffect(() => {
         if (!phoneValue || phoneValue.length < 12 || isEditMode) {
             setPhoneCheckResult(null);
@@ -214,7 +208,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
             } finally {
                 setIsCheckingPhone(false);
             }
-        }, 500); // 500ms debounce
+        }, 500);
 
         return () => clearTimeout(timer);
     }, [phoneValue, isEditMode]);
@@ -229,7 +223,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
             return api.post("/sellers", { ...data, funnelId: activeFunnelId || undefined });
         },
         onSuccess: () => {
-            toast.success(isEditMode ? "РџСЂРѕРґР°РІРµС† РѕР±РЅРѕРІР»РµРЅ" : "РџСЂРѕРґР°РІРµС† СѓСЃРїРµС€РЅРѕ СЃРѕР·РґР°РЅ");
+            toast.success(isEditMode ? "Продавец обновлён" : "Продавец успешно создан");
             queryClient.invalidateQueries({ queryKey: ["sellers"] });
             onOpenChange(false);
             if (!isEditMode) form.reset();
@@ -237,9 +231,8 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
         },
         onError: (error: any) => {
             const errorData = error.response?.data;
-            const errorMessage = errorData?.error || errorData?.message || "РћС€РёР±РєР° СЃРѕС…СЂР°РЅРµРЅРёСЏ";
+            const errorMessage = errorData?.error || errorData?.message || "Ошибка сохранения";
 
-            // If validation details exist, show the first one
             if (errorData?.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
                 toast.error(`${errorMessage}: ${errorData.details[0].message} (${errorData.details[0].field})`);
             } else {
@@ -251,7 +244,6 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
     function onInvalid(errors: any) {
         console.error("Form validation errors:", errors);
 
-        // 1. Identify Sections with Errors
         const sectionsToOpen = new Set(expandedSections);
         const errorKeys = Object.keys(errors);
 
@@ -265,30 +257,28 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
 
         setExpandedSections(Array.from(sectionsToOpen));
 
-        // 2. Format Error Messages
         const missingFields = errorKeys.map(field => {
             const map: Record<string, string> = {
-                firstName: "РРјСЏ",
-                lastName: "Р¤Р°РјРёР»РёСЏ",
-                phone: "РўРµР»РµС„РѕРЅ",
-                source: "РСЃС‚РѕС‡РЅРёРє",
-                reason: "РџСЂРёС‡РёРЅР° РїСЂРѕРґР°Р¶Рё",
-                deadline: "РЎСЂРѕС‡РЅРѕСЃС‚СЊ",
-                expectedPrice: "Р–РµР»Р°РµРјР°СЏ С†РµРЅР°",
-                minPrice: "РњРёРЅРёРјР°Р»СЊРЅР°СЏ С†РµРЅР°",
-                purchaseBudget: "Р‘СЋРґР¶РµС‚ РїРѕРєСѓРїРєРё",
-                communicationChannel: "РљР°РЅР°Р» СЃРІСЏР·Рё",
-                preferredTime: "РЈРґРѕР±РЅРѕРµ РІСЂРµРјСЏ",
-                reasonOther: "РЈС‚РѕС‡РЅРµРЅРёРµ РїСЂРёС‡РёРЅС‹",
-                managerComment: "РљРѕРјРјРµРЅС‚СЂР°РёР№"
+                firstName: "Имя",
+                lastName: "Фамилия",
+                phone: "Телефон",
+                source: "Источник",
+                reason: "Причина продажи",
+                deadline: "Срочность",
+                expectedPrice: "Желаемая цена",
+                minPrice: "Минимальная цена",
+                purchaseBudget: "Бюджет покупки",
+                communicationChannel: "Канал связи",
+                preferredTime: "Удобное время",
+                reasonOther: "Уточнение причины",
+                managerComment: "Комментарий"
             };
-            // Use translation or fallback to field name (and show specific error message from Zod if available)
             const label = map[field] || field;
             const msg = errors[field]?.message;
             return msg ? `${label} (${msg})` : label;
         });
 
-        toast.error(`РСЃРїСЂР°РІСЊС‚Рµ РѕС€РёР±РєРё (${missingFields.length}):`, {
+        toast.error(`Исправьте ошибки (${missingFields.length}):`, {
             description: missingFields.join(", "),
             duration: 6000,
         });
@@ -308,20 +298,19 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                 <div className="p-6 bg-white border-b shrink-0 z-20 shadow-sm">
                     <SheetHeader>
                         <SheetTitle>
-                            {isEditMode ? "Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ РїСЂРѕРґР°РІС†Р°" : "РќРѕРІС‹Р№ РїСЂРѕРґР°РІРµС†"}
+                            {isEditMode ? "Редактирование продавца" : "Новый продавец"}
                         </SheetTitle>
                         <SheetDescription>
                             {isEditMode
-                                ? "РћР±РЅРѕРІРёС‚Рµ РґР°РЅРЅС‹Рµ РґР»СЏ Р°РєС‚СѓР°Р»РёР·Р°С†РёРё СЃС‚СЂР°С‚РµРіРёРё."
-                                : "Р—Р°РїРѕР»РЅРёС‚Рµ РѕСЃРЅРѕРІРЅС‹Рµ РґР°РЅРЅС‹Рµ Рѕ РєР»РёРµРЅС‚Рµ Рё РµРіРѕ Р·Р°РїСЂРѕСЃРµ."}
+                                ? "Обновите данные для актуализации стратегии."
+                                : "Заполните основные данные о клиенте и его запросе."}
                         </SheetDescription>
                     </SheetHeader>
 
-                    {/* Progress Bar (Only in Edit Mode) */}
                     {isEditMode && (
                         <div className="mt-4">
                             <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                                <span>Р—Р°РїРѕР»РЅРµРЅРѕ: {progress.completed} РёР· {progress.total} Р±Р»РѕРєРѕРІ</span>
+                                <span>Заполнено: {progress.completed} из {progress.total} блоков</span>
                                 <span>{Math.round((progress.completed / progress.total) * 100)}%</span>
                             </div>
                             <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -338,7 +327,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                     <Form {...form}>
                         <form id="create-seller-form" onSubmit={form.handleSubmit(onSubmit, onInvalid)} className="space-y-4 pb-6">
 
-                            {/* NEW SELLER: Simple Flat Form (Old Style) */}
+                            {/* NEW SELLER: Simple Flat Form */}
                             {!isEditMode && (
                                 <div className="space-y-6">
                                     <div className="grid grid-cols-2 gap-4">
@@ -347,9 +336,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="firstName"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>РРјСЏ</FormLabel>
+                                                    <FormLabel>Имя</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="РРјСЏ" {...field} />
+                                                        <Input placeholder="Имя" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -360,9 +349,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="lastName"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Р¤Р°РјРёР»РёСЏ</FormLabel>
+                                                    <FormLabel>Фамилия</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="Р¤Р°РјРёР»РёСЏ" {...field} />
+                                                        <Input placeholder="Фамилия" {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -376,7 +365,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="phone"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>РўРµР»РµС„РѕРЅ</FormLabel>
+                                                    <FormLabel>Телефон</FormLabel>
                                                     <FormControl>
                                                         <Input
                                                             placeholder="+7 (700) 000-00-00"
@@ -398,12 +387,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                         />
                                                     </FormControl>
                                                     {isCheckingPhone && (
-                                                        <p className="text-sm text-muted-foreground">РџСЂРѕРІРµСЂСЏРµРј РЅРѕРјРµСЂ...</p>
+                                                        <p className="text-sm text-muted-foreground">Проверяем номер...</p>
                                                     )}
                                                     {!isCheckingPhone && phoneCheckResult?.exists && (
                                                         <div className="flex flex-col gap-2 mt-2">
                                                             <p className="text-sm text-amber-600 font-medium">
-                                                                вљ пёЏ РљР»РёРµРЅС‚ СЃ С‚Р°РєРёРј РЅРѕРјРµСЂРѕРј СѓР¶Рµ РµСЃС‚СЊ: {phoneCheckResult.seller?.name}
+                                                                ⚠️ Клиент с таким номером уже есть: {phoneCheckResult.seller?.name}
                                                             </p>
                                                             <Button
                                                                 type="button"
@@ -414,12 +403,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                                     if (phoneCheckResult.seller) {
                                                                         form.setValue("firstName", phoneCheckResult.seller.firstName || "");
                                                                         form.setValue("lastName", phoneCheckResult.seller.lastName || "");
-                                                                        // If we had middleName field in form, we'd set it too
-                                                                        toast.info("Р”Р°РЅРЅС‹Рµ РєР»РёРµРЅС‚Р° Р·Р°РїРѕР»РЅРµРЅС‹");
+                                                                        toast.info("Данные клиента заполнены");
                                                                     }
                                                                 }}
                                                             >
-                                                                Р—Р°РїРѕР»РЅРёС‚СЊ РґР°РЅРЅС‹Рµ РєР»РёРµРЅС‚Р°
+                                                                Заполнить данные клиента
                                                             </Button>
                                                         </div>
                                                     )}
@@ -435,11 +423,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="reason"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Р’РѕРїСЂРѕСЃ / РўРµРјР° (РџСЂРёС‡РёРЅР°)</FormLabel>
+                                                    <FormLabel>Вопрос / Тема (Причина)</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value || ""}>
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="Р’С‹Р±РµСЂРёС‚Рµ РїСЂРёС‡РёРЅСѓ" />
+                                                                <SelectValue placeholder="Выберите причину" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -460,11 +448,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="nextPurchaseFormat"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>РРЅС‚РµСЂРµСЃ (Р’С‚РѕСЂРёС‡РєР°/РќРѕРІРѕСЃС‚СЂРѕР№РєР°)</FormLabel>
+                                                    <FormLabel>Интерес (Вторичка/Новостройка)</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value || ""}>
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="РўРёРї РЅРµРґРІРёР¶РёРјРѕСЃС‚Рё" />
+                                                                <SelectValue placeholder="Тип недвижимости" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -482,7 +470,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="purchaseBudget"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>Р‘СЋРґР¶РµС‚ РїРѕРєСѓРїРєРё (в‚ё)</FormLabel>
+                                                    <FormLabel>Бюджет покупки (₸)</FormLabel>
                                                     <FormControl>
                                                         <PriceInput
                                                             placeholder="60 000 000"
@@ -502,11 +490,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="source"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>РСЃС‚РѕС‡РЅРёРє</FormLabel>
+                                                    <FormLabel>Источник</FormLabel>
                                                     <Select onValueChange={field.onChange} value={field.value || ""}>
                                                         <FormControl>
                                                             <SelectTrigger>
-                                                                <SelectValue placeholder="РСЃС‚РѕС‡РЅРёРє РєРѕРЅС‚Р°РєС‚Р°" />
+                                                                <SelectValue placeholder="Источник контакта" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent>
@@ -524,9 +512,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                             name="managerComment"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel>РљРѕРјРјРµРЅС‚Р°СЂРёР№</FormLabel>
+                                                    <FormLabel>Комментарий</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder="Р—Р°РјРµС‚РєРё..." {...field} />
+                                                        <Input placeholder="Заметки..." {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -543,12 +531,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     <FormItem>
                                                         <FormLabel className="flex items-center gap-2">
                                                             <Home className="h-4 w-4 text-orange-600" />
-                                                            Р’С‹Р±РµСЂРёС‚Рµ Р–Рљ (РЁР°С…РјР°С‚РєР°)
+                                                            Выберите ЖК (Шахматка)
                                                         </FormLabel>
                                                         <Select onValueChange={field.onChange} value={field.value || ""}>
                                                             <FormControl>
                                                                 <SelectTrigger className="bg-white">
-                                                                    <SelectValue placeholder={isLoadingProjects ? "Р—Р°РіСЂСѓР·РєР° РїСЂРѕРµРєС‚РѕРІ..." : "Р’С‹Р±РµСЂРёС‚Рµ РїСЂРѕРµРєС‚ РґР»СЏ РїСЂРёРІСЏР·РєРё"} />
+                                                                    <SelectValue placeholder={isLoadingProjects ? "Загрузка проектов..." : "Выберите проект для привязки"} />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
@@ -558,7 +546,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                             </SelectContent>
                                                         </Select>
                                                         <FormDescription>
-                                                            РЎРґРµР»РєР° Р±СѓРґРµС‚ СЃРІСЏР·Р°РЅР° СЃ РІС‹Р±СЂР°РЅРЅС‹Рј Р¶РёР»С‹Рј РєРѕРјРїР»РµРєСЃРѕРј.
+                                                            Сделка будет связана с выбранным жилым комплексом.
                                                         </FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
@@ -577,12 +565,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                     onValueChange={setExpandedSections}
                                     className="space-y-3"
                                 >
-                                    {/* 1. РћСЃРЅРѕРІРЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ */}
+                                    {/* 1. Основная информация */}
                                     <AccordionItem value="basic" className="border rounded-lg px-4">
                                         <AccordionTrigger className="hover:no-underline">
                                             <div className="flex items-center gap-3">
                                                 <User className="h-5 w-5 text-primary" />
-                                                <span className="font-medium">РћСЃРЅРѕРІРЅР°СЏ РёРЅС„РѕСЂРјР°С†РёСЏ Рѕ РїСЂРѕРґР°РІС†Рµ</span>
+                                                <span className="font-medium">Основная информация о продавце</span>
                                                 {progress.sections.basic && (
                                                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                                                 )}
@@ -590,7 +578,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-4 pb-2">
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                РљРѕРЅС‚Р°РєС‚РЅС‹Рµ РґР°РЅРЅС‹Рµ Рё Р±Р°Р·РѕРІР°СЏ РёРґРµРЅС‚РёС„РёРєР°С†РёСЏ РєР»РёРµРЅС‚Р°.
+                                                Контактные данные и базовая идентификация клиента.
                                             </p>
 
                                             <div className="grid grid-cols-2 gap-4">
@@ -599,9 +587,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="firstName"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РљР°Рє Рє РІР°Рј РѕР±СЂР°С‰Р°С‚СЊСЃСЏ?</FormLabel>
+                                                            <FormLabel>Как к вам обращаться?</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="РРјСЏ" {...field} />
+                                                                <Input placeholder="Имя" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -612,9 +600,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="lastName"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Р¤Р°РјРёР»РёСЏ</FormLabel>
+                                                            <FormLabel>Фамилия</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="Р¤Р°РјРёР»РёСЏ" {...field} />
+                                                                <Input placeholder="Фамилия" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -628,7 +616,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="phone"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РўРµР»РµС„РѕРЅ</FormLabel>
+                                                            <FormLabel>Телефон</FormLabel>
                                                             <FormControl>
                                                                 <Input
                                                                     placeholder="+7 (700) 000-00-00"
@@ -657,9 +645,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="city"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Р“РѕСЂРѕРґ РїСЂРѕР¶РёРІР°РЅРёСЏ</FormLabel>
+                                                            <FormLabel>Город проживания</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="РђСЃС‚Р°РЅР°" {...field} />
+                                                                <Input placeholder="Астана" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -673,11 +661,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="source"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РСЃС‚РѕС‡РЅРёРє РєРѕРЅС‚Р°РєС‚Р°</FormLabel>
+                                                            <FormLabel>Источник контакта</FormLabel>
                                                             <Select onValueChange={field.onChange} value={field.value || ""}>
                                                                 <FormControl>
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="Р’С‹Р±РµСЂРёС‚Рµ РёСЃС‚РѕС‡РЅРёРє" />
+                                                                        <SelectValue placeholder="Выберите источник" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
@@ -697,10 +685,10 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                 name="managerComment"
                                                 render={({ field }) => (
                                                     <FormItem className="mt-4">
-                                                        <FormLabel>РљРѕРјРјРµРЅС‚Р°СЂРёР№ РґР»СЏ РєРѕРјР°РЅРґС‹ Casa (РЅРµРѕР±СЏР·Р°С‚РµР»СЊРЅРѕ)</FormLabel>
+                                                        <FormLabel>Комментарий для команды Casa (необязательно)</FormLabel>
                                                         <FormControl>
                                                             <Textarea
-                                                                placeholder="Р—Р°РјРµС‚РєРё, РѕСЃРѕР±РµРЅРЅРѕСЃС‚Рё РєР»РёРµРЅС‚Р°..."
+                                                                placeholder="Заметки, особенности клиента..."
                                                                 className="resize-none"
                                                                 {...field}
                                                             />
@@ -712,12 +700,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionContent>
                                     </AccordionItem>
 
-                                    {/* 2. РџСЂРёС‡РёРЅР° РїСЂРѕРґР°Р¶Рё Рё СЃСЂРѕС‡РЅРѕСЃС‚СЊ */}
+                                    {/* 2. Причина продажи и срочность */}
                                     <AccordionItem value="reason" className="border rounded-lg px-4">
                                         <AccordionTrigger className="hover:no-underline">
                                             <div className="flex items-center gap-3">
                                                 <Clock className="h-5 w-5 text-orange-500" />
-                                                <span className="font-medium">РџСЂРёС‡РёРЅР° РїСЂРѕРґР°Р¶Рё Рё СЃСЂРѕС‡РЅРѕСЃС‚СЊ</span>
+                                                <span className="font-medium">Причина продажи и срочность</span>
                                                 {progress.sections.reason && (
                                                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                                                 )}
@@ -725,9 +713,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-4 pb-2">
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                РџСЂРёС‡РёРЅР° Рё СЃСЂРѕРєРё РЅР°РїСЂСЏРјСѓСЋ РІР»РёСЏСЋС‚ РЅР° СЃС‚СЂР°С‚РµРіРёСЋ Рё С†РµРЅСѓ.
+                                                Причина и сроки напрямую влияют на стратегию и цену.
                                                 <br />
-                                                <span className="text-xs">Casa РёСЃРїРѕР»СЊР·СѓРµС‚ СЌС‚Рё РґР°РЅРЅС‹Рµ РїСЂРё РІС‹Р±РѕСЂРµ С„РѕСЂРјР°С‚Р° РїСЂРѕРґР°Р¶Рё.</span>
+                                                <span className="text-xs">Casa использует эти данные при выборе формата продажи.</span>
                                             </p>
 
                                             <div className="grid grid-cols-2 gap-4">
@@ -736,11 +724,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="reason"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РџСЂРёС‡РёРЅР° РїСЂРѕРґР°Р¶Рё</FormLabel>
+                                                            <FormLabel>Причина продажи</FormLabel>
                                                             <Select onValueChange={field.onChange} value={field.value || ""}>
                                                                 <FormControl>
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="Р’С‹Р±РµСЂРёС‚Рµ РїСЂРёС‡РёРЅСѓ" />
+                                                                        <SelectValue placeholder="Выберите причину" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
@@ -758,11 +746,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="deadline"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РЎСЂРѕС‡РЅРѕСЃС‚СЊ</FormLabel>
+                                                            <FormLabel>Срочность</FormLabel>
                                                             <Select onValueChange={field.onChange} value={field.value || ""}>
                                                                 <FormControl>
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="Р’С‹Р±РµСЂРёС‚Рµ СЃСЂРѕРє" />
+                                                                        <SelectValue placeholder="Выберите срок" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
@@ -783,9 +771,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="reasonOther"
                                                     render={({ field }) => (
                                                         <FormItem className="mt-4">
-                                                            <FormLabel>РЈС‚РѕС‡РЅРёС‚Рµ РїСЂРёС‡РёРЅСѓ</FormLabel>
+                                                            <FormLabel>Уточните причину</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="РћРїРёС€РёС‚Рµ РїСЂРёС‡РёРЅСѓ..." {...field} />
+                                                                <Input placeholder="Опишите причину..." {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -795,12 +783,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionContent>
                                     </AccordionItem>
 
-                                    {/* 3. Р¦РµРЅРѕРІС‹Рµ РѕР¶РёРґР°РЅРёСЏ */}
+                                    {/* 3. Ценовые ожидания */}
                                     <AccordionItem value="price" className="border rounded-lg px-4">
                                         <AccordionTrigger className="hover:no-underline">
                                             <div className="flex items-center gap-3">
                                                 <DollarSign className="h-5 w-5 text-green-500" />
-                                                <span className="font-medium">Р¦РµРЅРѕРІС‹Рµ РѕР¶РёРґР°РЅРёСЏ</span>
+                                                <span className="font-medium">Ценовые ожидания</span>
                                                 {progress.sections.price && (
                                                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                                                 )}
@@ -808,7 +796,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-4 pb-2">
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                РџРѕРЅРёРјР°РЅРёРµ С†РµРЅРѕРІС‹С… РѕР¶РёРґР°РЅРёР№ РїРѕРјРѕРіР°РµС‚ РІС‹СЃС‚СЂРѕРёС‚СЊ РїСЂР°РІРёР»СЊРЅСѓСЋ СЃС‚СЂР°С‚РµРіРёСЋ.
+                                                Понимание ценовых ожиданий помогает выстроить правильную стратегию.
                                             </p>
 
                                             <div className="grid grid-cols-2 gap-4">
@@ -817,7 +805,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="expectedPrice"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>Р–РµР»Р°РµРјР°СЏ С†РµРЅР° (в‚ё)</FormLabel>
+                                                            <FormLabel>Желаемая цена (₸)</FormLabel>
                                                             <FormControl>
                                                                 <PriceInput
                                                                     placeholder="50 000 000"
@@ -834,7 +822,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="minPrice"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РњРёРЅРёРјР°Р»СЊРЅР°СЏ С†РµРЅР° (в‚ё)</FormLabel>
+                                                            <FormLabel>Минимальная цена (₸)</FormLabel>
                                                             <FormControl>
                                                                 <PriceInput
                                                                     placeholder="45 000 000"
@@ -842,7 +830,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                                     onChange={(v) => field.onChange(v ? Number(v) : undefined)}
                                                                 />
                                                             </FormControl>
-                                                            <FormDescription>РќРёР¶Рµ РєРѕС‚РѕСЂРѕР№ РЅРµ РіРѕС‚РѕРІ РѕРїСѓСЃРєР°С‚СЊСЃСЏ</FormDescription>
+                                                            <FormDescription>Ниже которой не готов опускаться</FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )}
@@ -856,8 +844,8 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     render={({ field }) => (
                                                         <FormItem className="flex items-center justify-between rounded-lg border p-3">
                                                             <div className="space-y-0.5">
-                                                                <FormLabel>Р“РѕС‚РѕРІ РѕР±СЃСѓР¶РґР°С‚СЊ С†РµРЅСѓ</FormLabel>
-                                                                <FormDescription>РљР»РёРµРЅС‚ РѕС‚РєСЂС‹С‚ Рє С‚РѕСЂРіСѓ</FormDescription>
+                                                                <FormLabel>Готов обсуждать цену</FormLabel>
+                                                                <FormDescription>Клиент открыт к торгу</FormDescription>
                                                             </div>
                                                             <FormControl>
                                                                 <Switch
@@ -873,11 +861,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="marketAssessment"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РћС†РµРЅРєР° СЂС‹РЅРєР° РїСЂРѕРґР°РІС†РѕРј</FormLabel>
+                                                            <FormLabel>Оценка рынка продавцом</FormLabel>
                                                             <Select onValueChange={field.onChange} value={field.value || ""}>
                                                                 <FormControl>
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="РљР°Рє РѕС†РµРЅРёРІР°РµС‚ С†РµРЅС‹?" />
+                                                                        <SelectValue placeholder="Как оценивает цены?" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
@@ -894,12 +882,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionContent>
                                     </AccordionItem>
 
-                                    {/* 4. РџР»Р°РЅС‹ Рё Р¤РёРЅР°РЅСЃС‹ */}
+                                    {/* 4. Планы и финансы */}
                                     <AccordionItem value="plans" className="border rounded-lg px-4">
                                         <AccordionTrigger className="hover:no-underline">
                                             <div className="flex items-center gap-3">
                                                 <Home className="h-5 w-5 text-blue-500" />
-                                                <span className="font-medium">РџР»Р°РЅС‹ Рё Р¤РёРЅР°РЅСЃС‹</span>
+                                                <span className="font-medium">Планы и Финансы</span>
                                                 {progress.sections.plans && (
                                                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                                                 )}
@@ -907,7 +895,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-4 pb-2">
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                РџРѕРЅРёРјР°РЅРёРµ С„РёРЅР°РЅСЃРѕРІРѕР№ СЃРёС‚СѓР°С†РёРё РїРѕРјРѕРіР°РµС‚ РїРѕРґРѕР±СЂР°С‚СЊ РѕРїС‚РёРјР°Р»СЊРЅСѓСЋ СЃС‚СЂР°С‚РµРіРёСЋ.
+                                                Понимание финансовой ситуации помогает подобрать оптимальную стратегию.
                                             </p>
 
                                             <FormField
@@ -916,8 +904,8 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                 render={({ field }) => (
                                                     <FormItem className="flex items-center justify-between rounded-lg border p-3 mb-4">
                                                         <div className="space-y-0.5">
-                                                            <FormLabel>РџР»Р°РЅРёСЂСѓРµС‚ РїРѕРєСѓРїРєСѓ РІР·Р°РјРµРЅ?</FormLabel>
-                                                            <FormDescription>РљР»РёРµРЅС‚ С…РѕС‡РµС‚ РєСѓРїРёС‚СЊ РґСЂСѓРіСѓСЋ РЅРµРґРІРёР¶РёРјРѕСЃС‚СЊ</FormDescription>
+                                                            <FormLabel>Планирует покупку взамен?</FormLabel>
+                                                            <FormDescription>Клиент хочет купить другую недвижимость</FormDescription>
                                                         </div>
                                                         <FormControl>
                                                             <Switch
@@ -936,11 +924,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                         name="nextPurchaseFormat"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Р¤РѕСЂРјР°С‚ РїРѕРєСѓРїРєРё</FormLabel>
+                                                                <FormLabel>Формат покупки</FormLabel>
                                                                 <Select onValueChange={field.onChange} value={field.value || ""}>
                                                                     <FormControl>
                                                                         <SelectTrigger>
-                                                                            <SelectValue placeholder="Р§С‚Рѕ РїР»Р°РЅРёСЂСѓРµС‚ РєСѓРїРёС‚СЊ?" />
+                                                                            <SelectValue placeholder="Что планирует купить?" />
                                                                         </SelectTrigger>
                                                                     </FormControl>
                                                                     <SelectContent>
@@ -958,7 +946,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                         name="purchaseBudget"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Р‘СЋРґР¶РµС‚ РЅР° РїРѕРєСѓРїРєСѓ (в‚ё)</FormLabel>
+                                                                <FormLabel>Бюджет на покупку (₸)</FormLabel>
                                                                 <FormControl>
                                                                     <PriceInput
                                                                         placeholder="60 000 000"
@@ -979,8 +967,8 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                 render={({ field }) => (
                                                     <FormItem className="flex items-center justify-between rounded-lg border p-3 mt-4">
                                                         <div className="space-y-0.5">
-                                                            <FormLabel>Р•СЃС‚СЊ РєСЂРµРґРёС‚РЅС‹Рµ РѕР±СЏР·Р°С‚РµР»СЊСЃС‚РІР°?</FormLabel>
-                                                            <FormDescription>РўРµРєСѓС‰РёРµ РєСЂРµРґРёС‚С‹, РёРїРѕС‚РµРєР°</FormDescription>
+                                                            <FormLabel>Есть кредитные обязательства?</FormLabel>
+                                                            <FormDescription>Текущие кредиты, ипотека</FormDescription>
                                                         </div>
                                                         <FormControl>
                                                             <Switch
@@ -999,7 +987,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                         name="loanPaymentAmount"
                                                         render={({ field }) => (
                                                             <FormItem>
-                                                                <FormLabel>Р•Р¶РµРјРµСЃСЏС‡РЅС‹Р№ РїР»Р°С‚РµР¶ (в‚ё)</FormLabel>
+                                                                <FormLabel>Ежемесячный платеж (₸)</FormLabel>
                                                                 <FormControl>
                                                                     <PriceInput
                                                                         placeholder="150 000"
@@ -1016,12 +1004,12 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionContent>
                                     </AccordionItem>
 
-                                    {/* 5. РљРѕРјРјСѓРЅРёРєР°С†РёСЏ */}
+                                    {/* 5. Коммуникация */}
                                     <AccordionItem value="communication" className="border rounded-lg px-4">
                                         <AccordionTrigger className="hover:no-underline">
                                             <div className="flex items-center gap-3">
                                                 <MessageSquare className="h-5 w-5 text-purple-500" />
-                                                <span className="font-medium">РљРѕРјРјСѓРЅРёРєР°С†РёСЏ</span>
+                                                <span className="font-medium">Коммуникация</span>
                                                 {progress.sections.communication && (
                                                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                                                 )}
@@ -1029,7 +1017,7 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                         </AccordionTrigger>
                                         <AccordionContent className="pt-4 pb-2">
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                РљР°Рє Рё РєРѕРіРґР° Р»СѓС‡С€Рµ СЃРІСЏР·С‹РІР°С‚СЊСЃСЏ СЃ РєР»РёРµРЅС‚РѕРј.
+                                                Как и когда лучше связываться с клиентом.
                                             </p>
 
                                             <div className="grid grid-cols-2 gap-4">
@@ -1038,11 +1026,11 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="communicationChannel"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РџСЂРµРґРїРѕС‡С‚РёС‚РµР»СЊРЅС‹Р№ РєР°РЅР°Р» СЃРІСЏР·Рё</FormLabel>
+                                                            <FormLabel>Предпочтительный канал связи</FormLabel>
                                                             <Select onValueChange={field.onChange} value={field.value || ""}>
                                                                 <FormControl>
                                                                     <SelectTrigger>
-                                                                        <SelectValue placeholder="Р’С‹Р±РµСЂРёС‚Рµ РєР°РЅР°Р»" />
+                                                                        <SelectValue placeholder="Выберите канал" />
                                                                     </SelectTrigger>
                                                                 </FormControl>
                                                                 <SelectContent>
@@ -1060,9 +1048,9 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                                                     name="preferredTime"
                                                     render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel>РЈРґРѕР±РЅРѕРµ РІСЂРµРјСЏ РґР»СЏ СЃРІСЏР·Рё</FormLabel>
+                                                            <FormLabel>Удобное время для связи</FormLabel>
                                                             <FormControl>
-                                                                <Input placeholder="РЈС‚СЂРѕРј РґРѕ 10:00" {...field} />
+                                                                <Input placeholder="Утром до 10:00" {...field} />
                                                             </FormControl>
                                                             <FormMessage />
                                                         </FormItem>
@@ -1081,13 +1069,13 @@ export function CreateSellerForm({ open, onOpenChange, initialData, onSuccess, a
                 <div className="p-4 bg-white border-t shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]">
                     <Button type="submit" form="create-seller-form" className="w-full" disabled={mutation.isPending}>
                         {mutation.isPending
-                            ? "РЎРѕС…СЂР°РЅРµРЅРёРµ..."
-                            : (isEditMode ? "РЎРѕС…СЂР°РЅРёС‚СЊ РёРЅС„РѕСЂРјР°С†РёСЋ Рѕ РїСЂРѕРґР°РІС†Рµ" : "РЎРѕР·РґР°С‚СЊ РїСЂРѕРґР°РІС†Р°")
+                            ? "Сохранение..."
+                            : (isEditMode ? "Сохранить информацию о продавце" : "Создать продавца")
                         }
                     </Button>
                 </div>
-            </SheetContent >
-        </Sheet >
+            </SheetContent>
+        </Sheet>
     );
 }
 
