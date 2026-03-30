@@ -44,7 +44,7 @@ export default function DashboardLayout({
             <SidebarTrigger />
             <span className="ml-2 font-semibold">Pro Casa</span>
           </div>
-          <div className="flex-1 overflow-auto">{children}</div>
+          <div className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">{children}</div>
         </main>
       </div>
       </StrategyProvider>
