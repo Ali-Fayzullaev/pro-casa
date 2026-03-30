@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
+// Disable Prisma debug logs
+delete process.env.DEBUG;
+
 // Singleton pattern для Prisma Client
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 

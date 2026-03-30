@@ -272,7 +272,7 @@ projectsRouter.post('/', requireRole('DEVELOPER', 'ADMIN'), async (req: Request,
         promotions: data.promotions,
         mortgagePrograms: data.mortgagePrograms || [],
         videoUrl: data.videoUrl,
-        deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : undefined,
+        deliveryDate: data.deliveryDate ? (() => { const d = new Date(data.deliveryDate); return d.getFullYear() > 1900 && d.getFullYear() < 2100 ? d : undefined; })() : undefined,
         images: data.images || [],
         developerId,
       },
@@ -325,7 +325,7 @@ projectsRouter.put('/:id', requireRole('DEVELOPER', 'ADMIN'), async (req: Reques
       where: { id },
       data: {
         ...data,
-        deliveryDate: data.deliveryDate ? new Date(data.deliveryDate) : undefined,
+        deliveryDate: data.deliveryDate ? (() => { const d = new Date(data.deliveryDate); return d.getFullYear() > 1900 && d.getFullYear() < 2100 ? d : undefined; })() : undefined,
       } as any,
       include: {
         developer: {
