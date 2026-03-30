@@ -43,7 +43,51 @@ usersAdminRouter.get('/', async (req: Request, res: Response): Promise<void> => 
   }
 });
 
-// ... (GET /:id/full remains unchanged) ...
+// GET /api/admin/users/:id/full - получить полную информацию о пользователе (ADMIN only)
+usersAdminRouter.get('/:id/full', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        balance: true,
+        curatorName: true,
+        curatorPhone: true,
+        curatorEmail: true,
+        curatorWhatsApp: true,
+        createdAt: true,
+        courseProgress: {
+          include: {
+            course: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: 'Пользователь не найден' });
+      return;
+    }
+
+    res.json({
+      ...user,
+      balance: Number(user.balance),
+    });
+  } catch (error) {
+    console.error('Get user full error:', error);
+    res.status(500).json({ error: 'Ошибка получения данных пользователя' });
+  }
+});
 
 // POST /api/admin/users - создать пользователя (ADMIN only)
 usersAdminRouter.post('/', async (req: Request, res: Response): Promise<void> => {
