@@ -42,6 +42,27 @@ const statusBadgeColors: Record<Subscription["status"], string> = {
   CANCELLED: "bg-gray-100 text-gray-700",
 }
 
+const planLabels: Record<Subscription["plan"], string> = {
+  FREE: "Бесплатный",
+  BASIC: "Базовый",
+  PRO: "Про",
+  ENTERPRISE: "Корпоративный",
+}
+
+const statusLabels: Record<Subscription["status"], string> = {
+  ACTIVE: "Активна",
+  EXPIRED: "Истекла",
+  CANCELLED: "Отменена",
+}
+
+const roleLabels: Record<string, string> = {
+  ADMIN: "Админ",
+  BROKER: "Брокер",
+  DEVELOPER: "Застройщик",
+  REALTOR: "Риелтор",
+  AGENCY: "Агентство",
+}
+
 interface SubscriptionsTableProps {
   subscriptions: Subscription[]
 }
@@ -73,15 +94,15 @@ export function SubscriptionsTable({ subscriptions }: SubscriptionsTableProps) {
                 <p className="text-sm text-muted-foreground">{sub.user.email}</p>
               </div>
             </TableCell>
-            <TableCell>{sub.user.role}</TableCell>
+            <TableCell>{roleLabels[sub.user.role] || sub.user.role}</TableCell>
             <TableCell>
               <Badge className={`border-transparent ${planBadgeColors[sub.plan]}`}>
-                {sub.plan}
+                {planLabels[sub.plan]}
               </Badge>
             </TableCell>
             <TableCell>
               <Badge className={`border-transparent ${statusBadgeColors[sub.status]}`}>
-                {sub.status}
+                {statusLabels[sub.status]}
               </Badge>
             </TableCell>
             <TableCell>

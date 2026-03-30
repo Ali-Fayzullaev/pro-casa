@@ -241,11 +241,11 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="w-full sm:max-w-4xl bg-gray-50 p-0 flex flex-col h-full z-[100]">
+            <SheetContent className="w-full sm:max-w-4xl bg-gray-50 p-0 gap-0 overflow-hidden z-[100]">
                 {/* AI Thinking Overlay */}
                 {isThinking && <StrategyLoader />}
 
-                <div className="p-6 bg-white border-b sticky top-0 z-20 shadow-sm">
+                <div className="p-6 bg-white border-b shrink-0 z-20 shadow-sm">
                     <SheetHeader>
                         <SheetTitle className="text-xl flex items-center justify-between">
                             Новый Объект
@@ -266,7 +266,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                <div className="flex-1 overflow-y-auto p-6 scroll-smooth min-h-0">
                     <Form {...form}>
                         <form id="create-property-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-6">
 
@@ -856,7 +856,7 @@ export function CreatePropertyForm({ open, onOpenChange, sellerId, initialData }
                 </div>
 
                 {/* Fixed Footer */}
-                <div className="p-4 bg-white border-t z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-end gap-2">
+                <div className="p-4 bg-white border-t shrink-0 z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] flex justify-end gap-2">
                     <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
                         Отмена
                     </Button>

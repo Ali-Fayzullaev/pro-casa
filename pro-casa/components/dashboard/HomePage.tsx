@@ -270,10 +270,21 @@ export function HomePage() {
                                         <div key={item.id} className="flex justify-between items-start p-2.5 rounded-lg hover:bg-accent/50 transition-colors cursor-pointer group">
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium text-foreground truncate">{item.residentialComplex}</p>
-                                                <p className="text-xs text-red-500 font-medium mt-0.5">{item.activeStrategy}</p>
+                                                <p className="text-xs text-red-500 font-medium mt-0.5">{
+                                                    ({
+                                                        LOW_LIQUIDITY: "Низкая ликвидность",
+                                                        INVESTMENT_EXIT: "Выход из инвестиции",
+                                                        REJECT_OBJECT: "Отказ от объекта",
+                                                        URGENT_SALE: "Срочная продажа",
+                                                        MARKET_SALE: "Рыночная продажа",
+                                                        PREMIUM_SALE: "Премиум продажа",
+                                                        STANDARD_SALE: "Стандартная продажа",
+                                                        FAST_SALE: "Быстрая продажа",
+                                                    } as Record<string, string>)[item.activeStrategy] || item.activeStrategy
+                                                }</p>
                                             </div>
                                             <Badge variant="outline" className="text-[10px] shrink-0 ml-2 border-red-200 text-red-600 bg-red-50">
-                                                Risk
+                                                Риск
                                             </Badge>
                                         </div>
                                     ))

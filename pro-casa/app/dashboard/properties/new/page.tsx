@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileUpload } from "@/components/file-upload"
+import { PriceInput } from "@/components/ui/price-input"
 import { API_URL } from "@/lib/config"
 
 interface Client {
@@ -200,7 +201,7 @@ export default function NewPropertyPage() {
                 />
               </div>
 
-              <div className="space-y-2 md:col-span-2">
+              <div className="space-y-2">
                 <Label htmlFor="address">Адрес *</Label>
                 <Input
                   id="address"
@@ -277,13 +278,9 @@ export default function NewPropertyPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="price">Цена (₸) *</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  min="0"
-                  required
+                <PriceInput
                   value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                  onChange={(value) => setFormData({ ...formData, price: value })}
                   placeholder="Цена объекта"
                 />
               </div>

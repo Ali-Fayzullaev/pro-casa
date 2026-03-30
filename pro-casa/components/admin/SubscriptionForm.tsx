@@ -39,6 +39,13 @@ interface SubscriptionFormProps {
 
 const plans = ["FREE", "BASIC", "PRO", "ENTERPRISE"] as const
 
+const planLabels: Record<string, string> = {
+  FREE: "Бесплатный",
+  BASIC: "Базовый",
+  PRO: "Про",
+  ENTERPRISE: "Корпоративный",
+}
+
 export function SubscriptionForm({ open, onOpenChange }: SubscriptionFormProps) {
   const queryClient = useQueryClient()
 
@@ -126,7 +133,7 @@ export function SubscriptionForm({ open, onOpenChange }: SubscriptionFormProps) 
               <SelectContent>
                 {plans.map((p) => (
                   <SelectItem key={p} value={p}>
-                    {p}
+                    {planLabels[p] || p}
                   </SelectItem>
                 ))}
               </SelectContent>
