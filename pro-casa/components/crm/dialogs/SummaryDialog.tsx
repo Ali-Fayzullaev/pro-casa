@@ -19,10 +19,11 @@ import {
     PropertyClassLabels,
     FunnelStageLabels,
     RepairStateLabels,
-    LiquidityLevelLabels
+    LiquidityLevelLabels,
+    StrategyDescriptions
 } from "@/lib/translations";
 import { useStrategy } from "@/lib/strategy-context";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api-client";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ interface SummaryDialogProps {
 
 export function SummaryDialog({ open, onOpenChange, data, type, initialActivePropertyId }: SummaryDialogProps) {
     const { getLabel } = useStrategy();
+    const queryClient = useQueryClient();
     // 1. Internal Navigation State
     const [activePropertyId, setActivePropertyId] = useState<string | null>(initialActivePropertyId || null);
 
@@ -222,22 +224,64 @@ export function SummaryDialog({ open, onOpenChange, data, type, initialActivePro
                                     {property.activeStrategy && (
                                         <div className="mb-6 rounded-xl border border-indigo-100 overflow-hidden bg-white shadow-sm">
                                             {/* Header / Verdict */}
-                                            <div className="bg-gradient-to-r from-indigo-50 to-white p-4 border-b border-indigo-100 flex items-center gap-3">
-                                                <div className="bg-indigo-100/50 p-2 rounded-lg">
-                                                    <Brain className="h-6 w-6 text-indigo-600" />
-                                                </div>
-                                                <div>
-                                                    <div className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">
-                                                        AI Strategy Verdict
+                                            <div className="bg-gradient-to-r from-indigo-50 to-white p-4 border-b border-indigo-100">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="bg-indigo-100/50 p-2 rounded-lg">
+                                                            <Brain className="h-6 w-6 text-indigo-600" />
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">
+                                                                {property.isStrategyManual ? "Стратегия (ручная)" : "AI Strategy Verdict"}
+                                                            </div>
+                                                            <div className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                                                                {getLabel(property.activeStrategy) || property.activeStrategy}
+                                                                {property.calculatedClass && (
+                                                                    <span className="text-xs font-normal text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                                                                        {property.calculatedClass}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                                                        {getLabel(property.activeStrategy) || property.activeStrategy}
-                                                        {property.calculatedClass && (
-                                                            <span className="text-xs font-normal text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                                                                {property.calculatedClass}
-                                                            </span>
+                                                    {/* Change Strategy Button */}
+                                                    <div className="flex items-center gap-2">
+                                                        {property.isStrategyManual && property.recommendedStrategy && (
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-xs h-7"
+                                                                onClick={async (e) => {
+                                                                    e.stopPropagation();
+                                                                    try {
+                                                                        await api.put(`/crm-properties/${property.id}/strategy`, { resetToRecommended: true });
+                                                                        toast.success("Стратегия сброшена на рекомендуемую");
+                                                                        queryClient.invalidateQueries({ queryKey: ["sellers"] });
+                                                                        queryClient.invalidateQueries({ queryKey: ["properties"] });
+                                                                    } catch { toast.error("Ошибка сброса стратегии"); }
+                                                                }}
+                                                            >
+                                                                Сбросить на AI
+                                                            </Button>
                                                         )}
+                                                        <select
+                                                            className="text-xs border rounded px-2 py-1 bg-white"
+                                                            value={property.activeStrategy}
+                                                            onChange={async (e) => {
+                                                                try {
+                                                                    await api.put(`/crm-properties/${property.id}/strategy`, { activeStrategy: e.target.value });
+                                                                    toast.success("Стратегия изменена");
+                                                                    queryClient.invalidateQueries({ queryKey: ["sellers"] });
+                                                                    queryClient.invalidateQueries({ queryKey: ["properties"] });
+                                                                } catch { toast.error("Ошибка смены стратегии"); }
+                                                            }}
+                                                        >
+                                                            {Object.entries(StrategyDescriptions).map(([key, s]) => (
+                                                                <option key={key} value={key}>{s.code} {s.name}</option>
+                                                            ))}
+                                                        </select>
                                                     </div>
+                                                </div>
                                                 </div>
                                             </div>
 
