@@ -39,6 +39,15 @@ export function StrategyProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("token");
     if (!token) { setLoaded(true); return; }
 
+    // Only admins can access /admin/settings
+    try {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        const user = JSON.parse(userData);
+        if (user.role !== "ADMIN") { setLoaded(true); return; }
+      }
+    } catch {}
+
     fetch(`${API_URL}/admin/settings`, {
       headers: { Authorization: `Bearer ${token}` },
     })

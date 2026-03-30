@@ -62,10 +62,17 @@ export function StrategyGrid({ selectedStrategy, onSelect, readOnly = false }: S
             .catch(() => {});
     }, []);
 
-    // Load overrides
+    // Load overrides (admin only)
     useEffect(() => {
         const token = localStorage.getItem("token");
         if (!token) return;
+        try {
+            const userData = localStorage.getItem("user");
+            if (userData) {
+                const user = JSON.parse(userData);
+                if (user.role !== "ADMIN") return;
+            }
+        } catch {}
         fetch(`${API_URL}/admin/settings`, {
             headers: { Authorization: `Bearer ${token}` },
         })

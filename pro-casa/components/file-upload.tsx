@@ -8,6 +8,7 @@ import { API_URL } from "@/lib/config"
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog"
 
 interface UploadedFile {
@@ -274,7 +275,8 @@ export function FileUpload({
 
       {/* Lightbox for full-size image viewing */}
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-none">
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 bg-black/95 border-none" aria-describedby={undefined}>
+          <DialogTitle className="sr-only">Просмотр изображения</DialogTitle>
           <div className="relative w-full h-full flex items-center justify-center">
             {/* Image counter */}
             <div className="absolute top-4 left-4 text-white text-sm bg-black/50 px-3 py-1 rounded-full">

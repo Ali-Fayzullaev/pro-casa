@@ -401,7 +401,8 @@ export default function ProjectDetailsPage() {
 
           {/* Lightbox Modal */}
           <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
-            <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none">
+            <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 bg-black/95 border-none" aria-describedby={undefined}>
+              <DialogTitle className="sr-only">Просмотр фото</DialogTitle>
               <div className="relative w-full h-[90vh] flex items-center justify-center">
                 {/* Close button */}
                 <Button
