@@ -209,12 +209,20 @@ export function KanbanBoard() {
     const getColumns = () => {
         if (crmMode === "CUSTOM") {
             if (!activeFunnel) return [];
-            return activeFunnel.stages.map(stage => ({
+            const cols = activeFunnel.stages.map(stage => ({
                 id: stage.id,
                 title: stage.name,
                 color: stage.color,
-                variant: 'default' // We use color prop instead
+                variant: 'default' as const
             }));
+            // Add "uncategorized" column for items without a valid stage
+            const stageIds = new Set(cols.map(c => c.id));
+            const allItems = [...sellersFiltered, ...propertiesFiltered];
+            const hasUncategorized = allItems.some(item => !item.customStageId || !stageIds.has(item.customStageId));
+            if (hasUncategorized) {
+                cols.unshift({ id: 'uncategorized', title: 'Без этапа', color: '#9CA3AF', variant: 'default' as const });
+            }
+            return cols;
         }
         return activeTab === "sellers" ? SELLER_COLUMNS : PROPERTY_COLUMNS;
     };
