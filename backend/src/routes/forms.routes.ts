@@ -9,9 +9,9 @@ export const formsRouter = Router();
 // Validation schemas
 const fieldSchema = z.object({
     label: z.string(),
-    type: z.enum(['text', 'tel', 'email', 'select', 'number']),
+    type: z.string(),
     required: z.boolean(),
-    options: z.array(z.string()).optional(), // for select
+    options: z.array(z.string()).optional(),
 });
 
 const createFormSchema = z.object({
@@ -35,6 +35,7 @@ formsRouter.post('/', authenticate, async (req: Request, res: Response): Promise
             return;
         }
 
+        console.log('Create form body:', JSON.stringify(req.body, null, 2));
         const data = createFormSchema.parse(req.body);
 
         const form = await prisma.leadForm.create({
