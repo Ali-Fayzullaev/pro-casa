@@ -52,7 +52,8 @@ formsRouter.post('/', authenticate, async (req: Request, res: Response): Promise
         res.status(201).json(form);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            res.status(400).json({ error: error.errors });
+            console.error('Form validation error:', JSON.stringify(error.errors, null, 2));
+            res.status(400).json({ error: 'Ошибка валидации', details: error.errors });
             return;
         }
         console.error('Create form error:', error);

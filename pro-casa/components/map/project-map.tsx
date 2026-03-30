@@ -149,9 +149,20 @@ export default function ProjectMap({
       setMapLoaded(true)
     }
 
-    initMap()
+    let cancelled = false;
+    const initMapSafe = async () => {
+      if (typeof window === "undefined" || !mapRef.current) return;
+      // Cleanup any existing map first
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+      await initMap();
+    };
+    initMapSafe();
 
     return () => {
+      cancelled = true;
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
         mapInstanceRef.current = null
