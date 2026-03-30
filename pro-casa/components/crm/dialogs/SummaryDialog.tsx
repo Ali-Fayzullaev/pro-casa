@@ -282,7 +282,6 @@ export function SummaryDialog({ open, onOpenChange, data, type, initialActivePro
                                                         </select>
                                                     </div>
                                                 </div>
-                                                </div>
                                             </div>
 
                                             {/* Content */}
