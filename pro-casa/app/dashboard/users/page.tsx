@@ -247,14 +247,16 @@ export default function UsersPage() {
                     size="sm"
                     onClick={() => router.push(`/dashboard/users/${user.id}`)}
                   >
-                    <Shield className="h-4 w-4" />
+                    <Shield className="h-4 w-4 mr-1" />
+                    Смотреть
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => router.push(`/dashboard/users/${user.id}/edit`)}
                   >
-                    <Edit className="h-4 w-4" />
+                    <Edit className="h-4 w-4 mr-1" />
+                    Изменить
                   </Button>
                   <Button
                     variant="outline"
@@ -262,7 +264,8 @@ export default function UsersPage() {
                     onClick={() => setDeleteUserId(user.id)}
                     className="text-red-600 hover:text-red-700"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Удалить
                   </Button>
                 </div>
               </div>
