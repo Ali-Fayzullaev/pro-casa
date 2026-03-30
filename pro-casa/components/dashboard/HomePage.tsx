@@ -174,7 +174,7 @@ export function HomePage() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-2">
-                <Link href="/dashboard/crm">
+                <Link href="/dashboard/properties/new">
                     <Button size="sm" className="gap-2 bg-[#2E7D5E] hover:bg-[#256B4E] text-white shadow-sm">
                         <Home className="h-3.5 w-3.5" />Добавить объект
                     </Button>
@@ -184,7 +184,7 @@ export function HomePage() {
                         <Calculator className="h-3.5 w-3.5" />Ипотека
                     </Button>
                 </Link>
-                <Link href="/dashboard/crm">
+                <Link href="/dashboard/bookings/new">
                     <Button size="sm" variant="outline" className="gap-2 border-border/60 hover:bg-accent">
                         <CalendarPlus className="h-3.5 w-3.5" />Создать бронь
                     </Button>

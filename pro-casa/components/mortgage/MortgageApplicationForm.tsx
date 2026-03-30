@@ -22,6 +22,7 @@ import {
 import { Input } from "@/components/ui/input"
 import api from "@/lib/api-client"
 import { toast } from "sonner"
+import { PriceInput } from "@/components/ui/price-input"
 
 interface Client {
   id: string
@@ -47,11 +48,15 @@ export function MortgageApplicationForm({ open, onOpenChange }: MortgageApplicat
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const { data: clients } = useQuery<Client[]>({
-    queryKey: ["clients"],
-    queryFn: () => api.get("/clients").then((r) => r.data),
+  const { data: rawClients } = useQuery({
+    queryKey: ["mortgage-clients"],
+    queryFn: () => api.get("/clients", { params: { limit: 100 } }).then((r) => {
+      const d = r.data;
+      return Array.isArray(d) ? d : (d.clients ?? d.data ?? []);
+    }),
     enabled: open,
   })
+  const clients: Client[] = Array.isArray(rawClients) ? rawClients : []
 
   const mutation = useMutation({
     mutationFn: (data: {
@@ -126,7 +131,7 @@ export function MortgageApplicationForm({ open, onOpenChange }: MortgageApplicat
                 <SelectValue placeholder="Выберите клиента" />
               </SelectTrigger>
               <SelectContent>
-                {(clients ?? []).map((c) => (
+                {clients.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.firstName} {c.lastName} ({c.phone})
                   </SelectItem>
@@ -161,11 +166,9 @@ export function MortgageApplicationForm({ open, onOpenChange }: MortgageApplicat
 
           <div className="space-y-2">
             <Label>Сумма кредита (₸)</Label>
-            <Input
-              type="number"
-              min="1"
+            <PriceInput
               value={loanAmount}
-              onChange={(e) => setLoanAmount(e.target.value)}
+              onChange={setLoanAmount}
               placeholder="0"
             />
             {errors.loanAmount && (

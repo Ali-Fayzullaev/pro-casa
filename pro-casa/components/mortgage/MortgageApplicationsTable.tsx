@@ -41,6 +41,15 @@ const statusBadgeColors: Record<MortgageApplication["status"], string> = {
   CANCELLED: "bg-gray-100 text-gray-700",
 }
 
+const statusLabels: Record<MortgageApplication["status"], string> = {
+  DRAFT: "Черновик",
+  SUBMITTED: "Отправлена",
+  REVIEWING: "На рассмотрении",
+  APPROVED: "Одобрена",
+  REJECTED: "Отклонена",
+  CANCELLED: "Отменена",
+}
+
 interface MortgageApplicationsTableProps {
   applications: MortgageApplication[]
   onRowClick?: (application: MortgageApplication) => void
@@ -90,7 +99,7 @@ export function MortgageApplicationsTable({
             </TableCell>
             <TableCell>
               <Badge className={`border-transparent ${statusBadgeColors[app.status]}`}>
-                {app.status}
+                {statusLabels[app.status]}
               </Badge>
             </TableCell>
             <TableCell>

@@ -132,19 +132,15 @@ const menuItems: MenuSection[] = [
       { title: "Шахматка", url: "/dashboard/chess", icon: Grid3x3 },
     ],
   },
-  // 4. Ипотека - одна кнопка без подразделов
+  // 4. Ипотека - collapsible с подразделами
   {
     title: "Ипотека",
     icon: Calculator,
-    url: "/dashboard/mortgage",
     roles: ["ADMIN", "BROKER", "DEVELOPER", "REALTOR", "AGENCY"],
-  },
-  // 4.1 Заявки в банки
-  {
-    title: "Заявки в банки",
-    icon: FileText,
-    url: "/dashboard/mortgage-applications",
-    roles: ["ADMIN", "BROKER", "REALTOR"],
+    subItems: [
+      { title: "Калькулятор", url: "/dashboard/mortgage", icon: Calculator },
+      { title: "Заявки в банки", url: "/dashboard/mortgage-applications", icon: FileText },
+    ],
   },
   // 5. Профиль - одна кнопка без подразделов (табы внутри страницы)
   {
