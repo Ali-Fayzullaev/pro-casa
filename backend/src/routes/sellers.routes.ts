@@ -354,6 +354,24 @@ sellersRouter.post(
             // Remove funnelId from data before creating seller as it's not in the schema
             const { funnelId, ...sellerData } = data;
 
+            // Clamp decimal fields to prevent overflow (Decimal(15,2) max = 9999999999999.99)
+            const MAX_DECIMAL = 9999999999999.99;
+            if (sellerData.purchaseBudget && Number(sellerData.purchaseBudget) > MAX_DECIMAL) {
+                sellerData.purchaseBudget = MAX_DECIMAL;
+            }
+            if (sellerData.expectedPrice && Number(sellerData.expectedPrice) > MAX_DECIMAL) {
+                sellerData.expectedPrice = MAX_DECIMAL;
+            }
+            if (sellerData.minPrice && Number(sellerData.minPrice) > MAX_DECIMAL) {
+                sellerData.minPrice = MAX_DECIMAL;
+            }
+            if (sellerData.incomeAmount && Number(sellerData.incomeAmount) > MAX_DECIMAL) {
+                sellerData.incomeAmount = MAX_DECIMAL;
+            }
+            if (sellerData.loanPaymentAmount && Number(sellerData.loanPaymentAmount) > MAX_DECIMAL) {
+                sellerData.loanPaymentAmount = MAX_DECIMAL;
+            }
+
             console.log('Creating seller with data:', {
                 ...sellerData,
                 brokerId: req.user!.userId,
