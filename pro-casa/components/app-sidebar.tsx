@@ -24,9 +24,10 @@ import {
   Scale,
   Settings,
   Target,
-  LayoutList, // NEW
+  LayoutList,
   Archive,
   Upload,
+  Crown,
 } from "lucide-react"
 import {
   Sidebar,
@@ -51,6 +52,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { NotificationBell } from "@/components/notification-bell"
+import { cn } from "@/lib/utils"
 
 // Menu structure according to Casa PRO v1 ТЗ (5 main sections for broker)
 interface MenuItem {
