@@ -1,0 +1,1 @@
+for f in $(find pro-casa/components/crm -name "*.tsx"); do c=$(python3 -c "data=open(\"$f\",\"rb\").read(); print(data.count(b\"\xd0\xa0\xd0\xb0\xd0\xba\"))" 2>/dev/null); if [ "$c" != "0" ] 2>/dev/null; then echo "$f ($c matches)"; fi; done
