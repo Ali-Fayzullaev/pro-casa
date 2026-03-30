@@ -1,4 +1,10 @@
-@import "tailwindcss";
+import { writeFileSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const css = `@import "tailwindcss";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -155,3 +161,7 @@
 .animate-spinner {
   animation: spinner 0.7s linear infinite;
 }
+`;
+
+writeFileSync(resolve(__dirname, 'app/globals.css'), css, 'utf-8');
+console.log('GLOBALS_CSS_WRITTEN_OK');
