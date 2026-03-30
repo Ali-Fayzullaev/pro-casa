@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
     Users,
     DollarSign,
@@ -18,6 +18,7 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     MoreHorizontal,
+    ChevronDown,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -225,7 +226,7 @@ export function HomePage() {
             </div>
 
             <div className="grid gap-6 grid-cols-1 lg:grid-cols-3">
-                {/* Main Chart */}
+                {/* Main Chart — Visual Funnel */}
                 <Card className="col-span-1 lg:col-span-2 border-border/40 shadow-sm">
                     <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
@@ -233,32 +234,16 @@ export function HomePage() {
                                 <CardTitle className="text-base font-semibold text-foreground">Воронка объектов</CardTitle>
                                 <CardDescription className="text-xs mt-0.5">Распределение по этапам сделки</CardDescription>
                             </div>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
+                            <Link href="/dashboard/crm">
+                                <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+                                    Открыть CRM
+                                    <ArrowRight className="h-3.5 w-3.5" />
+                                </Button>
+                            </Link>
                         </div>
                     </CardHeader>
-                    <CardContent className="h-80 pt-2">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data?.charts.funnel} layout="horizontal" margin={{ top: 10, right: 20, left: -10, bottom: 5 }}>
-                                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                                <YAxis fontSize={11} tickLine={false} axisLine={false} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                                <Tooltip
-                                    cursor={{ fill: 'hsl(var(--accent))' }}
-                                    contentStyle={{
-                                        borderRadius: '8px',
-                                        border: '1px solid hsl(var(--border))',
-                                        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                                        fontSize: '12px',
-                                    }}
-                                />
-                                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                                    {data?.charts.funnel.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={getBarColor(entry.stage)} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <CardContent className="pt-2 pb-6">
+                        <FunnelVisualization data={data?.charts.funnel || []} />
                     </CardContent>
                 </Card>
 
@@ -410,4 +395,120 @@ function getBarColor(stage: string) {
         case 'leads': return '#3A9D73';
         default: return '#94a3b8';
     }
+}
+
+const FUNNEL_COLORS: Record<string, { bg: string; border: string; text: string; bar: string; icon: string }> = {
+    created:      { bg: 'bg-slate-50',   border: 'border-slate-200', text: 'text-slate-700',   bar: '#94a3b8', icon: '📋' },
+    preparation:  { bg: 'bg-amber-50',   border: 'border-amber-200', text: 'text-amber-700',   bar: '#D4A843', icon: '🔧' },
+    leads:        { bg: 'bg-blue-50',    border: 'border-blue-200',  text: 'text-[#2E7D5E]',   bar: '#3A9D73', icon: '👥' },
+    shows:        { bg: 'bg-yellow-50',  border: 'border-yellow-200',text: 'text-[#B8960F]',   bar: '#FFD700', icon: '👁' },
+    deal:         { bg: 'bg-emerald-50', border: 'border-emerald-200',text: 'text-[#2E7D5E]',  bar: '#2E7D5E', icon: '🤝' },
+    sold:         { bg: 'bg-green-50',   border: 'border-green-300', text: 'text-green-700',    bar: '#1B5E40', icon: '✅' },
+    cancelled:    { bg: 'bg-red-50',     border: 'border-red-200',   text: 'text-red-600',      bar: '#ef4444', icon: '❌' },
+};
+
+function getFunnelColor(stage: string) {
+    return FUNNEL_COLORS[stage] || FUNNEL_COLORS['created'];
+}
+
+function FunnelVisualization({ data }: { data: Array<{ name: string; stage: string; value: number }> }) {
+    const maxValue = useMemo(() => Math.max(...data.map(d => d.value), 1), [data]);
+    const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
+
+    if (data.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
+                <div className="text-center space-y-2">
+                    <ChevronDown className="h-8 w-8 mx-auto text-muted-foreground/40" />
+                    <p>Нет данных для воронки</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-2.5">
+            {/* Summary bar */}
+            <div className="flex items-center justify-between px-1 mb-4">
+                <div className="flex items-center gap-4">
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-foreground">{total}</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Всего</div>
+                    </div>
+                    <div className="w-px h-8 bg-border" />
+                    {data.filter(d => d.stage === 'sold' || d.stage === 'deal').map(d => (
+                        <div key={d.stage} className="text-center">
+                            <div className={cn("text-lg font-semibold", getFunnelColor(d.stage).text)}>{d.value}</div>
+                            <div className="text-[10px] text-muted-foreground">{d.name}</div>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <span className="inline-block h-2 w-2 rounded-full bg-[#2E7D5E]" /> Этапы воронки
+                </div>
+            </div>
+
+            {/* Funnel stages */}
+            {data.map((item, index) => {
+                const colors = getFunnelColor(item.stage);
+                const pct = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
+                const widthPct = Math.max(pct, 8); // min 8% for visibility
+                const shareOfTotal = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
+
+                return (
+                    <div key={item.stage} className="group relative">
+                        <div className={cn(
+                            "flex items-center gap-3 px-3 py-2.5 rounded-lg border transition-all duration-200",
+                            "hover:shadow-sm hover:scale-[1.005]",
+                            colors.bg, colors.border
+                        )}>
+                            {/* Step number */}
+                            <div className={cn(
+                                "flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0",
+                                item.stage === 'cancelled'
+                                    ? "bg-red-100 text-red-600"
+                                    : "bg-[#2E7D5E]/10 text-[#2E7D5E]"
+                            )}>
+                                {item.stage === 'cancelled' ? '×' : index + 1}
+                            </div>
+
+                            {/* Stage name */}
+                            <div className="w-24 shrink-0">
+                                <div className={cn("text-sm font-medium leading-tight", colors.text)}>{item.name}</div>
+                            </div>
+
+                            {/* Progress bar */}
+                            <div className="flex-1 min-w-0">
+                                <div className="h-7 w-full bg-black/3 rounded-md overflow-hidden relative">
+                                    <div
+                                        className="h-full rounded-md transition-all duration-700 ease-out relative overflow-hidden"
+                                        style={{
+                                            width: `${widthPct}%`,
+                                            background: `linear-gradient(90deg, ${colors.bar}ee, ${colors.bar}bb)`,
+                                        }}
+                                    >
+                                        {/* Shimmer effect */}
+                                        <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Count + percentage */}
+                            <div className="text-right shrink-0 w-20">
+                                <div className={cn("text-base font-bold tabular-nums", colors.text)}>{item.value}</div>
+                                <div className="text-[10px] text-muted-foreground">{shareOfTotal}%</div>
+                            </div>
+                        </div>
+
+                        {/* Connector arrow */}
+                        {index < data.length - 1 && data[index + 1]?.stage !== 'cancelled' && item.stage !== 'cancelled' && (
+                            <div className="flex justify-center -my-0.5 relative z-10">
+                                <ChevronDown className="h-4 w-4 text-[#2E7D5E]/30" />
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
 }
