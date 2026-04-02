@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import { API_URL } from "@/lib/config";
-import { GraduationCap, Plus, Pencil, Trash2, Users, UserPlus } from "lucide-react";
+import { GraduationCap, Plus, Pencil, Trash2, Users, UserPlus, Clock, FileText } from "lucide-react";
 import { FileUpload } from "@/components/file-upload";
 
 interface Course {
@@ -251,8 +251,33 @@ export default function CoursesAdminPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="h-7 w-56 bg-muted rounded animate-pulse" />
+            <div className="h-4 w-72 bg-muted rounded animate-pulse mt-2" />
+          </div>
+          <div className="h-9 w-36 bg-muted rounded animate-pulse" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="rounded-xl">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-4 w-full bg-muted rounded animate-pulse mb-2" />
+                <div className="h-4 w-2/3 bg-muted rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
     );
   }
@@ -261,18 +286,18 @@ export default function CoursesAdminPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Управление курсами</h1>
-          <p className="text-muted-foreground">Создание и назначение курсов брокерам</p>
+          <h1 className="text-2xl font-bold tracking-tight">Управление курсами</h1>
+          <p className="text-sm text-muted-foreground">Создание и назначение курсов брокерам</p>
         </div>
         <div className="flex gap-2">
           <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" size="sm">
                 <UserPlus className="h-4 w-4 mr-2" />
                 Назначить курс
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Назначить курс брокеру</DialogTitle>
                 <DialogDescription>Выберите курс и брокера для назначения</DialogDescription>
@@ -313,7 +338,7 @@ export default function CoursesAdminPage() {
                 <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
                   Отмена
                 </Button>
-                <Button onClick={handleAssignCourse}>Назначить</Button>
+                <Button onClick={handleAssignCourse} className="bg-[#2E7D5E] hover:bg-[#256B4F] text-white">Назначить</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -323,7 +348,7 @@ export default function CoursesAdminPage() {
             if (!open) resetCourseForm();
           }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="sm" className="bg-[#2E7D5E] hover:bg-[#256B4F] text-white shadow-sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Создать курс
               </Button>
@@ -335,7 +360,7 @@ export default function CoursesAdminPage() {
                   {editingCourse ? "Измените данные курса" : "Заполните информацию о новом курсе"}
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
+              <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
                 <div className="space-y-2">
                   <Label>Название курса *</Label>
                   <Input
@@ -374,7 +399,7 @@ export default function CoursesAdminPage() {
                   <Label>Материалы курса (Файлы)</Label>
                   <div className="border rounded-lg p-4 bg-gray-50/50">
                     <FileUpload
-                      key={editingCourse?.id || 'new'} // Force re-mount on course change
+                      key={editingCourse?.id || 'new'}
                       category="all"
                       multiple={true}
                       existingFiles={courseForm.materials}
@@ -414,7 +439,7 @@ export default function CoursesAdminPage() {
                 }}>
                   Отмена
                 </Button>
-                <Button onClick={editingCourse ? handleUpdateCourse : handleCreateCourse}>
+                <Button onClick={editingCourse ? handleUpdateCourse : handleCreateCourse} className="bg-[#2E7D5E] hover:bg-[#256B4F] text-white">
                   {editingCourse ? "Сохранить" : "Создать"}
                 </Button>
               </DialogFooter>
@@ -423,53 +448,72 @@ export default function CoursesAdminPage() {
         </div>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {courses.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <GraduationCap className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Курсы не созданы</p>
-              <Button className="mt-4" onClick={() => setCourseDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Создать первый курс
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="col-span-full">
+            <Card className="rounded-xl border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <div className="rounded-full bg-[#2E7D5E]/10 p-4 mb-4">
+                  <GraduationCap className="h-10 w-10 text-[#2E7D5E]" />
+                </div>
+                <p className="text-lg font-medium mb-1">Курсы не созданы</p>
+                <p className="text-sm text-muted-foreground mb-4">Создайте первый курс для обучения брокеров</p>
+                <Button className="bg-[#2E7D5E] hover:bg-[#256B4F] text-white" onClick={() => setCourseDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Создать первый курс
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         ) : (
           courses.map((course) => (
-            <Card key={course.id}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5" />
-                    {course.title}
-                  </CardTitle>
-                  {course.description && (
-                    <CardDescription className="mt-1">{course.description}</CardDescription>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={course.isActive ? "default" : "secondary"}>
+            <Card key={course.id} className="rounded-xl border shadow-sm hover:shadow-md transition-all duration-200 flex flex-col group">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="rounded-lg bg-[#2E7D5E]/10 p-2 shrink-0">
+                      <GraduationCap className="h-4 w-4 text-[#2E7D5E]" />
+                    </div>
+                    <div className="min-w-0">
+                      <CardTitle className="text-base leading-tight truncate">{course.title}</CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">#{course.order} • {new Date(course.createdAt).toLocaleDateString("ru-RU")}</p>
+                    </div>
+                  </div>
+                  <Badge
+                    variant={course.isActive ? "default" : "secondary"}
+                    className={course.isActive ? "bg-[#2E7D5E]/15 text-[#2E7D5E] hover:bg-[#2E7D5E]/20 border-0 shrink-0" : "shrink-0"}
+                  >
                     {course.isActive ? "Активен" : "Неактивен"}
                   </Badge>
-                  <Badge variant="outline">{course.duration} мин</Badge>
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-center">
-                  <p className="text-sm text-muted-foreground">
-                    Порядок: {course.order} • Создан: {new Date(course.createdAt).toLocaleDateString("ru-RU")}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => openEditDialog(course)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDeleteCourse(course.id)}>
-                      <Trash2 className="h-4 w-4 text-red-500" />
-                    </Button>
-                  </div>
+              <CardContent className="flex-1 pb-3">
+                {course.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{course.description}</p>
+                )}
+                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    {course.duration} мин
+                  </span>
+                  {course.materials && course.materials.length > 0 && (
+                    <span className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />
+                      {course.materials.length} файл(ов)
+                    </span>
+                  )}
                 </div>
               </CardContent>
+              <div className="border-t px-6 py-3 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={() => openEditDialog(course)}>
+                  <Pencil className="h-3.5 w-3.5 mr-1" />
+                  Изменить
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 text-xs text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => handleDeleteCourse(course.id)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" />
+                  Удалить
+                </Button>
+              </div>
             </Card>
           ))
         )}

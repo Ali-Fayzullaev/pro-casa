@@ -44,6 +44,13 @@ import {
 } from "@/components/ui/table"
 import { API_URL } from "@/lib/config"
 import { useToast } from "@/hooks/use-toast"
+
+const BACKEND_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '')
+const getFileUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `${BACKEND_BASE}${url}`
+}
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -445,7 +452,7 @@ export default function ProjectsCatalogPage() {
                       <div className="h-10 w-14 bg-muted rounded overflow-hidden shrink-0">
                         {project.images?.[0] ? (
                           <img
-                            src={project.images[0]}
+                            src={getFileUrl(project.images[0])}
                             alt={project.name}
                             className="object-cover w-full h-full"
                           />
@@ -536,118 +543,126 @@ export default function ProjectsCatalogPage() {
         </Card>
       ) : (
         /* Grid View (default) */
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjects.map((project) => (
             <Card
               key={project.id}
-              className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group"
+              className="overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer group border-0 shadow-md bg-card flex flex-col h-full"
               onClick={() => router.push(`/dashboard/projects/${project.id}`)}
             >
-              <div className="aspect-video relative bg-muted">
+              {/* Image */}
+              <div className="aspect-[16/10] relative bg-gradient-to-br from-muted to-muted/60 overflow-hidden">
                 {project.images?.[0] ? (
                   <img
-                    src={project.images[0]}
+                    src={getFileUrl(project.images[0])}
                     alt={project.name}
-                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500 ease-out"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
-                    <Building2 className="h-12 w-12 opacity-20" />
+                  <div className="flex items-center justify-center h-full text-muted-foreground bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900">
+                    <Building2 className="h-16 w-16 opacity-15" />
                   </div>
                 )}
-                <div className="absolute top-2 right-2">
+                {/* Gradient overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                {/* Status badge */}
+                <div className="absolute top-3 right-3">
                   {getStatusBadge(project.buildingStatus)}
                 </div>
-                <div className="absolute bottom-2 left-2">
-                  {project.class && (
-                    <Badge variant="secondary" className="bg-background/80 backdrop-blur-sm">
+                {/* Class badge */}
+                {project.class && (
+                  <div className="absolute top-3 left-3">
+                    <Badge variant="secondary" className="bg-white/90 dark:bg-black/70 backdrop-blur-sm text-xs font-semibold shadow-sm">
                       {project.class}
                     </Badge>
+                  </div>
+                )}
+                {/* Price overlay */}
+                {project.apartmentStats?.minPrice && (
+                  <div className="absolute bottom-3 left-3">
+                    <span className="bg-white/95 dark:bg-black/80 backdrop-blur-sm text-sm font-bold px-3 py-1.5 rounded-lg shadow-sm text-[#2E7D5E]">
+                      от {(project.apartmentStats.minPrice / 1000000).toFixed(1)} млн ₸
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="flex flex-col flex-1 p-4">
+                <h3 className="font-semibold text-base leading-tight line-clamp-1 mb-1.5" title={project.name}>
+                  {project.name}
+                </h3>
+                <p className="text-xs text-muted-foreground flex items-center gap-1 mb-3 line-clamp-1">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{project.district ? `${project.district}, ` : ""}{project.address}</span>
+                </p>
+
+                {/* Info row */}
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mb-4 mt-auto">
+                  {project.deliveryDate && (
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(project.deliveryDate).toLocaleDateString("ru-RU", {
+                        year: "numeric",
+                        month: "short",
+                      })}
+                    </span>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <Button
+                    className="flex-1"
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/dashboard/projects/${project.id}`)
+                    }}
+                  >
+                    Подробнее
+                  </Button>
+                  <Button
+                    className="flex-1 bg-[#2E7D5E] hover:bg-[#256B4F] text-white"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/dashboard/projects/${project.id}?book=true`)
+                    }}
+                  >
+                    Забронировать
+                  </Button>
+                  {canManageProjects && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/dashboard/projects/${project.id}/edit`)
+                        }}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Редактировать
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-red-600"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setDeleteProjectId(project.id)
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Удалить
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
               </div>
-              <CardHeader>
-                <CardTitle className="flex justify-between items-start">
-                  <span>{project.name}</span>
-                </CardTitle>
-                <CardDescription className="flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />
-                  {project.district ? `${project.district}, ` : ""}{project.address}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Срок сдачи:</span>
-                    <span className="font-medium">
-                      {project.deliveryDate
-                        ? new Date(project.deliveryDate).toLocaleDateString("ru-RU", {
-                            year: "numeric",
-                            month: "long",
-                          })
-                        : "—"}
-                    </span>
-                  </div>
-                  {project.apartmentStats?.minPrice && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Цена от:</span>
-                      <span className="font-bold text-primary">
-                        {project.apartmentStats.minPrice.toLocaleString()} ₸
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="gap-2">
-                <Button
-                  className="flex-1"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push(`/dashboard/projects/${project.id}`)
-                  }}
-                >
-                  Подробнее
-                </Button>
-                <Button
-                  className="flex-1 bg-green-600 hover:bg-green-700"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    router.push(`/dashboard/projects/${project.id}?book=true`)
-                  }}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Забронировать
-                </Button>
-                {canManageProjects && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                      <Button variant="outline" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={(e) => {
-                        e.stopPropagation()
-                        router.push(`/dashboard/projects/${project.id}/edit`)
-                      }}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Редактировать
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        className="text-red-600"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setDeleteProjectId(project.id)
-                        }}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Удалить
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </CardFooter>
             </Card>
           ))}
         </div>

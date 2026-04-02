@@ -122,7 +122,7 @@ export function StrategyGrid({ selectedStrategy, onSelect, readOnly = false }: S
         const token = localStorage.getItem("token");
         try {
             const res = await fetch(`${API_URL}/admin/settings`, {
-                method: "PUT",
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`,
@@ -137,6 +137,7 @@ export function StrategyGrid({ selectedStrategy, onSelect, readOnly = false }: S
                 setOverrides(newOverrides);
                 setEditing(false);
                 setEditData(null);
+                setDialogKey(null);
             }
         } catch {}
         setSaving(false);

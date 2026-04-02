@@ -13,6 +13,12 @@ const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+const profileSchema = z.object({
+  firstName: z.string().min(1).max(100).optional(),
+  lastName: z.string().min(1).max(100).optional(),
+  phone: z.string().max(30).optional().nullable(),
+});
+
 // POST /api/auth/login
 authRouter.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
@@ -138,14 +144,14 @@ authRouter.get('/me', auth, async (req: Request, res: Response) => {
 // PUT /api/auth/profile - обновить профиль
 authRouter.put('/profile', auth, async (req: Request, res: Response) => {
   try {
-    const { firstName, lastName, phone } = req.body;
+    const { firstName, lastName, phone } = profileSchema.parse(req.body);
 
     const user = await prisma.user.update({
       where: { id: req.user!.userId },
       data: {
-        firstName,
-        lastName,
-        phone,
+        ...(firstName !== undefined && { firstName }),
+        ...(lastName !== undefined && { lastName }),
+        ...(phone !== undefined && { phone }),
       },
       select: {
         id: true,
@@ -159,6 +165,10 @@ authRouter.put('/profile', auth, async (req: Request, res: Response) => {
 
     res.json(user);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(400).json({ error: 'Неверные данные', details: error.errors });
+      return;
+    }
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Ошибка сервера' });
   }

@@ -83,11 +83,11 @@ export default function FunnelsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Воронки продаж</h1>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         Настройте собственные воронки продаж и этапы сделок.
                     </p>
                 </div>
-                <Button onClick={handleCreate} className="bg-[#2E7D5E] hover:bg-[#1B5E40] text-white">
+                <Button onClick={handleCreate} className="bg-[#2E7D5E] hover:bg-[#256B4F] text-white shadow-sm">
                     <Plus className="mr-2 h-4 w-4" />
                     Создать воронку
                 </Button>
@@ -103,86 +103,98 @@ export default function FunnelsPage() {
                 </Alert>
             )}
 
-            <div className="rounded-md border bg-card">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Название</TableHead>
-                            <TableHead>Статус</TableHead>
-                            <TableHead>Этапы</TableHead>
-                            <TableHead className="text-right">Действия</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <TableRow key={i}>
-                                    <TableCell><Skeleton className="h-4 w-[150px]" /></TableCell>
-                                    <TableCell><Skeleton className="h-4 w-[60px]" /></TableCell>
-                                    <TableCell><Skeleton className="h-4 w-[200px]" /></TableCell>
-                                    <TableCell><Skeleton className="h-8 w-[80px] ml-auto" /></TableCell>
-                                </TableRow>
-                            ))
-                        ) : funnels && funnels.length > 0 ? (
-                            funnels.map((funnel) => (
-                                <TableRow key={funnel.id}>
-                                    <TableCell className="font-medium">{funnel.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={funnel.isActive ? "default" : "secondary"}>
-                                            {funnel.isActive ? "Активна" : "Скрыта"}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex flex-wrap gap-1">
-                                            {funnel.stages && funnel.stages.length > 0 ? (
-                                                funnel.stages
-                                                    .sort((a, b) => a.order - b.order)
-                                                    .map((stage) => (
-                                                        <Badge
-                                                            key={stage.id}
-                                                            variant="outline"
-                                                            style={{ borderColor: stage.color, color: stage.color }}
-                                                            className="text-xs"
-                                                        >
-                                                            {stage.name}
-                                                        </Badge>
-                                                    ))
-                                            ) : (
-                                                <span className="text-muted-foreground text-sm italic">Нет этапов</span>
-                                            )}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(funnel)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="text-destructive hover:text-destructive/90"
-                                                onClick={() => handleDelete(funnel.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    Нет созданных воронок.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            {isLoading ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="rounded-xl border bg-card p-5 space-y-3">
+                            <Skeleton className="h-5 w-2/3" />
+                            <Skeleton className="h-4 w-1/3" />
+                            <div className="flex gap-2">
+                                <Skeleton className="h-6 w-16 rounded-full" />
+                                <Skeleton className="h-6 w-16 rounded-full" />
+                                <Skeleton className="h-6 w-16 rounded-full" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : funnels && funnels.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {funnels.map((funnel) => (
+                        <div
+                            key={funnel.id}
+                            className="group rounded-xl border bg-card p-5 hover:shadow-md transition-all duration-200 cursor-pointer"
+                            onClick={() => handleEdit(funnel)}
+                        >
+                            <div className="flex items-start justify-between mb-3">
+                                <div>
+                                    <h3 className="font-semibold text-base">{funnel.name}</h3>
+                                    <Badge
+                                        variant={funnel.isActive ? "default" : "secondary"}
+                                        className={`mt-1 text-[10px] ${funnel.isActive ? 'bg-[#2E7D5E]/10 text-[#2E7D5E] border-[#2E7D5E]/20' : ''}`}
+                                    >
+                                        {funnel.isActive ? "Активна" : "Скрыта"}
+                                    </Badge>
+                                </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={(e) => { e.stopPropagation(); handleEdit(funnel); }}
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-destructive hover:text-destructive/90"
+                                        onClick={(e) => { e.stopPropagation(); handleDelete(funnel.id); }}
+                                    >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                </div>
+                            </div>
+                            {funnel.stages && funnel.stages.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                    {funnel.stages
+                                        .sort((a, b) => a.order - b.order)
+                                        .map((stage, idx) => (
+                                            <div key={stage.id} className="flex items-center gap-1.5">
+                                                <Badge
+                                                    variant="outline"
+                                                    style={{ borderColor: stage.color, color: stage.color, backgroundColor: `${stage.color}10` }}
+                                                    className="text-[11px] font-medium"
+                                                >
+                                                    {stage.name}
+                                                </Badge>
+                                                {idx < funnel.stages.length - 1 && (
+                                                    <span className="text-muted-foreground/40 text-xs">→</span>
+                                                )}
+                                            </div>
+                                        ))
+                                    }
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">Нет этапов</p>
+                            )}
+                            <p className="text-[11px] text-muted-foreground mt-3">
+                                {funnel.stages?.length || 0} этапов
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="rounded-xl border-2 border-dashed bg-muted/30 flex flex-col items-center justify-center py-16">
+                    <div className="h-12 w-12 rounded-full bg-[#2E7D5E]/10 flex items-center justify-center mb-4">
+                        <Plus className="h-6 w-6 text-[#2E7D5E]" />
+                    </div>
+                    <p className="text-muted-foreground font-medium mb-1">Нет созданных воронок</p>
+                    <p className="text-xs text-muted-foreground mb-4">Создайте первую воронку для управления сделками</p>
+                    <Button onClick={handleCreate} variant="outline" size="sm">
+                        <Plus className="mr-2 h-3.5 w-3.5" /> Создать воронку
+                    </Button>
+                </div>
+            )}
 
             <FunnelEditor
                 open={editorOpen}

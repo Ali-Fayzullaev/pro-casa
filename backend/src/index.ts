@@ -61,8 +61,8 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(auditMiddleware);
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
@@ -87,15 +87,26 @@ app.get('/health', async (_req, res) => {
 });
 
 // API Routes
+
+// Global API rate limiter — 200 requests per minute per IP
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => req.method === 'OPTIONS',
+});
+app.use('/api', globalLimiter);
+
+// Strict limiter for login — 20 attempts per 15 min (relaxed in dev for testing)
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 минут
-  max: 20, // макс 20 попыток логина за 15 мин
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'development' ? 100 : 20,
   message: { error: 'Слишком много попыток входа. Попробуйте через 15 минут.' },
   standardHeaders: true,
   legacyHeaders: false,
   skip: (req) => req.method === 'OPTIONS',
 });
-
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);

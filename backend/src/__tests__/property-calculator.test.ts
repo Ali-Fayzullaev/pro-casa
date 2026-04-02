@@ -18,7 +18,7 @@ describe('Property Calculator', () => {
       hasClosedTerritory: true,
       elevatorCount: 2,
       hasFreightElevator: true,
-      locationQuality: 'PREMIUM' as const,
+      locationQuality: 'TOP' as const,
     };
 
     it('OLD_FUND for buildings <= 1980', () => {
@@ -63,14 +63,14 @@ describe('Property Calculator', () => {
       rooms: 2,
       area: 65,
       price: 35000000,
-      repairState: 'GOOD' as const,
+      repairState: 'EURO' as const,
       actualCondition: 'GOOD',
       parkingType: 'UNDERGROUND' as const,
-      layoutType: 'IMPROVED' as const,
+      layoutType: 'ISOLATED' as const,
       isCorner: false,
       hasBalcony: true,
       financeType: 'CLEAN',
-      locationQuality: 'PREMIUM' as const,
+      locationQuality: 'TOP' as const,
       elevatorCount: 2,
     };
 

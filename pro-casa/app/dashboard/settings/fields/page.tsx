@@ -85,28 +85,28 @@ export default function CustomFieldsPage() {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Пользовательские поля</h2>
-                    <p className="text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                         Настройте дополнительные поля для карточек продавцов и объектов.
                     </p>
                 </div>
                 <Button onClick={() => {
                     setEditingField(null);
                     setEditorOpen(true);
-                }}>
+                }} className="bg-[#2E7D5E] hover:bg-[#256B4F] text-white shadow-sm">
                     <Plus className="mr-2 h-4 w-4" />
                     Добавить поле
                 </Button>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Название</TableHead>
-                            <TableHead>Сущность</TableHead>
-                            <TableHead>Тип данных</TableHead>
-                            <TableHead>Воронка</TableHead>
-                            <TableHead>Статус</TableHead>
+                        <TableRow className="bg-muted/50">
+                            <TableHead className="font-semibold">Название</TableHead>
+                            <TableHead className="font-semibold">Сущность</TableHead>
+                            <TableHead className="font-semibold">Тип данных</TableHead>
+                            <TableHead className="font-semibold">Воронка</TableHead>
+                            <TableHead className="font-semibold">Статус</TableHead>
                             <TableHead className="w-[100px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -124,8 +124,13 @@ export default function CustomFieldsPage() {
                             ))
                         ) : fields.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
-                                    Нет добавленных полей.
+                                <TableCell colSpan={6} className="h-32 text-center">
+                                    <div className="flex flex-col items-center gap-2">
+                                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
+                                            <Plus className="h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                        <p className="text-muted-foreground">Нет добавленных полей</p>
+                                    </div>
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -146,7 +151,10 @@ export default function CustomFieldsPage() {
                                         {getFunnelName(field.funnelId)}
                                     </TableCell>
                                     <TableCell>
-                                        <Badge variant={field.isActive ? "default" : "secondary"}>
+                                        <Badge
+                                            variant={field.isActive ? "default" : "secondary"}
+                                            className={field.isActive ? "bg-[#2E7D5E]/15 text-[#2E7D5E] hover:bg-[#2E7D5E]/20 border-0" : ""}
+                                        >
                                             {field.isActive ? "Активно" : "Скрыто"}
                                         </Badge>
                                     </TableCell>

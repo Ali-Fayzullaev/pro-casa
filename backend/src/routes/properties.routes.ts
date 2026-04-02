@@ -219,6 +219,11 @@ propertiesRouter.post('/', async (req: Request, res: Response): Promise<void> =>
   try {
     const validatedData = createPropertySchema.parse(req.body);
 
+    // Remove empty sellerId to avoid foreign key violation
+    if (!validatedData.sellerId) {
+      delete validatedData.sellerId;
+    }
+
     const property = await prisma.property.create({
       data: {
         ...validatedData,

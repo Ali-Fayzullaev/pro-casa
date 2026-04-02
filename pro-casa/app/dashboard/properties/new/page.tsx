@@ -83,6 +83,7 @@ export default function NewPropertyPage() {
         area: parseFloat(formData.area),
         price: parseFloat(formData.price),
         features: formData.features ? formData.features.split(",").map(f => f.trim()) : [],
+        sellerId: formData.sellerId || undefined,
       }
 
       const res = await fetch(`${API_URL}/properties`, {

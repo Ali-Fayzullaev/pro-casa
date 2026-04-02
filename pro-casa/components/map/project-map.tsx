@@ -53,11 +53,16 @@ export default function ProjectMap({
   const [mapLoaded, setMapLoaded] = useState(false)
 
   useEffect(() => {
+    let cancelled = false
+
     // Динамический импорт Leaflet
     const initMap = async () => {
-      if (typeof window === "undefined" || !mapRef.current || mapInstanceRef.current) return
+      if (typeof window === "undefined" || !mapRef.current) return
 
       const L = (await import("leaflet")).default
+
+      // Check cancellation AFTER the async import (StrictMode cleanup may have fired)
+      if (cancelled || mapInstanceRef.current) return
       
       // Импортируем CSS через link элемент
       if (!document.querySelector('link[href*="leaflet.css"]')) {
@@ -74,6 +79,11 @@ export default function ProjectMap({
         iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
         shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
       })
+
+      // Clean up any leftover Leaflet state on the DOM element (React StrictMode re-mount)
+      if ((mapRef.current as any)._leaflet_id) {
+        delete (mapRef.current as any)._leaflet_id
+      }
 
       // Создаем карту
       const map = L.map(mapRef.current).setView(center, zoom)
@@ -149,20 +159,10 @@ export default function ProjectMap({
       setMapLoaded(true)
     }
 
-    let cancelled = false;
-    const initMapSafe = async () => {
-      if (typeof window === "undefined" || !mapRef.current) return;
-      // Cleanup any existing map first
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
-      await initMap();
-    };
-    initMapSafe();
+    initMap()
 
     return () => {
-      cancelled = true;
+      cancelled = true
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove()
         mapInstanceRef.current = null

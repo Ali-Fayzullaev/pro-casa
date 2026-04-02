@@ -11,6 +11,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 
+const BACKEND_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace(/\/api\/?$/, '')
+
+const getFileUrl = (url: string) => {
+  if (!url) return ''
+  if (url.startsWith('http')) return url
+  return `${BACKEND_BASE}${url}`
+}
+
 interface UploadedFile {
   fileName: string
   originalName: string
@@ -224,7 +232,7 @@ export function FileUpload({
               {isImage(url) ? (
                 <>
                   <img
-                    src={url}
+                    src={getFileUrl(url)}
                     alt={`Uploaded ${index + 1}`}
                     className="w-full h-full object-cover cursor-pointer"
                     onClick={() => {
@@ -307,7 +315,7 @@ export function FileUpload({
 
             {/* Main image */}
             <img
-              src={files[lightboxIndex]}
+              src={getFileUrl(files[lightboxIndex])}
               alt={`Image ${lightboxIndex + 1}`}
               className="max-w-full max-h-[85vh] object-contain"
             />
@@ -335,7 +343,7 @@ export function FileUpload({
                     lightboxIndex === idx ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"
                   )}
                 >
-                  <img src={url} alt="" className="w-full h-full object-cover" />
+                  <img src={getFileUrl(url)} alt="" className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
